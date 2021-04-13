@@ -35,11 +35,27 @@ class Home extends React.Component {
       src: "",
       dest: "",
       routed: -1,
+      userRouted: false,
+      userRouteId: null,
+      userRoutePrice: null,
+      userRouteDist: null
     };
     this.map = null;
     this.renderMap = this.renderMap.bind(this);
+    this.getRouteInfo = this.getRouteInfo.bind(this);
   }
 
+  getRouteInfo() {
+    // fetch() and get data
+    // .then((res) => res.json)
+    // .then((json) => { 
+    this.setState({
+      userRouted: true,
+      userRouteId: Math.floor(Math.random() * 100),
+      userRoutePrice: Math.random() * 40,
+      userRouteDist: Math.random() * 20
+    })
+  }
 
   renderMap() {
     if (this.state.routed == -1) {
@@ -78,6 +94,16 @@ class Home extends React.Component {
     }
   }
 
+  getUserRouteInfo() {
+    if(this.state.userRouted) {
+      return <div>
+        <h3>Route Info</h3>
+        <p>Price: {this.state.userRoutePrice}</p>
+        <p>Distance: {this.state.userRouteDist}</p>
+      </div>
+    }
+  }
+
   render() {
     this.renderMap();
     return (
@@ -113,6 +139,7 @@ class Home extends React.Component {
                   onClick={(event) => {
                     event.preventDefault();
                     this.setState({ routed: 1 });
+                    this.getRouteInfo();
                   }}
                 >
                   View Route
@@ -120,15 +147,17 @@ class Home extends React.Component {
                 <Button
                   variant="primary"
                   type="submit"
+                  disabled={!this.state.userRouted}
                   onClick={(event) => {
                     event.preventDefault();
-                    this.setState({ routed: 1 });
+                    document.location.replace("/user/route?userRouteId=" + this.state.userRouteId)
                   }}
                 >
                   Request Ride
                 </Button>
               </ButtonDiv>
             </Form>
+            {this.getUserRouteInfo()}
           </Pane>
           <Pane>{this.map}</Pane>
         </ContentDiv>

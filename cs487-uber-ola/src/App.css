@@ -1,11 +1,11 @@
 @font-face {
   font-family: 'Work-Sans';
-  src: local('Work-Sans'), url(./fonts/WorkSans-Regular.ttf) format('truetype')
+  src: local('Work-Sans'), url(./fonts/WorkSans-Regular.ttf) format('truetype');
 }
 
 @font-face {
   font-family: 'Work-Sans-Light';
-  src: local('Work-Sans'), url(./fonts/WorkSans-Light.ttf) format('truetype')
+  src: local('Work-Sans'), url(./fonts/WorkSans-Light.ttf) format('truetype');
 }
 
 h1 {

@@ -24,7 +24,7 @@ const NavbarItem = styled.a`
   color: #ffffff;
 `;
 
-const BasicLogo = styled.h1`
+const BasicLogo = styled.a`
   color: #ffffff;
   display: inline-block;
   margin: 10px;
@@ -32,46 +32,68 @@ const BasicLogo = styled.h1`
   width: 150px;
 `;
 
-const UserImage = styled.img`
-  border-radius: 100px;
-  max-height: 30px;
-  border: 1px;
-  margin-bottom: 10px;
-`;
-
-const UserName = styled.h1`
+const LoginButton = styled.a`
+border: solid 1px;
+padding: 5px 10px 5px 10px;
+border-radius: 5px;
+margin: 5px;
+color: black;
+background-color: white;
+`
+const UserName = styled.a`
   font-size: 30px;
   margin: 5px;
   display: inline-block;
   color: #ffffff;
-  font-family: "Work-Sans-Light";
+  font-family: "Work-Sans-Light", sans-serif;
 `;
 
 const UserDiv = styled.div`
   white-space: nowrap;
 `;
 
-let userName = Cookies.get("name");
-let userImage = Cookies.get("image");
+let userName = Cookies.get("fname");
+let userType = Cookies.get("userType");
 
-userName = "martin";
-userImage =
-  "https://play-lh.googleusercontent.com/IeNJWoKYx1waOhfWF6TiuSiWBLfqLb18lmZYXSgsH1fvb8v1IYiZr5aYWe0Gxu-pVZX3";
-
-const userInfo = (
-  <UserDiv>
-    <UserImage src={userImage} />
-    <UserName>{userName}</UserName>
-  </UserDiv>
-);
+function buildUserInfo() {
+  if (userName == null || userName == "") {
+    if(["login", "landing", "about", "home", "register"].map((x) => document.location.href.includes(x)).some((x) => x)) {
+      return (
+        <UserDiv>
+          <LoginButton href="/login">Login</LoginButton>
+          <LoginButton href="/register">Register</LoginButton>
+        </UserDiv>
+      );
+  } else {
+    document.location.replace("/login");
+  }
+  } else {
+    return (
+      <UserDiv>
+        <UserName href="/user">{userName}</UserName>
+      </UserDiv>
+    );
+  }
+}
 
 const getNavbarItem = (obj) => (
   <NavbarItem href={obj.link}>{obj.name}</NavbarItem>
 );
 
 // Jank way to stitch the objects together
-let names = ["Find a Ride", "About"];
-let links = ["./", "./dashboard"];
+
+let names, links;
+
+if(userType == "Driver") {
+  names = ["Drive"]
+  links = ["/drive"]
+} else {
+  names = ["Find A Ride"]
+  links = ["/ride"]
+}
+
+names.push("About")
+links.push("/about")
 
 let objs = [];
 for (let i = 0; i < names.length; i++) {
@@ -88,9 +110,9 @@ function buildNavbarItems(objs) {
 
 const Navbar = (props) => (
   <NavbarDiv>
-    <BasicLogo>TotallyNotUber</BasicLogo>
+    <BasicLogo href="/landing">TotallyNotUber</BasicLogo>
     <NavbarItemBox>{buildNavbarItems(objs)}</NavbarItemBox>
-    {userInfo}
+    {buildUserInfo()}
   </NavbarDiv>
 );
 
