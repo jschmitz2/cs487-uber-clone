@@ -22,15 +22,6 @@ class Register extends React.Component {
     };
 
     this.submitAddUser = this.submitAddUser.bind(this);
-
-    this.enter_fname = this.enter_fname.bind(this);
-    this.enter_lname = this.enter_lname.bind(this);
-    this.enter_email = this.enter_email.bind(this);
-    this.enter_pword = this.enter_pword.bind(this);
-    this.enter_graddate = this.enter_graddate.bind(this);
-    this.confirm_pword = this.confirm_pword.bind(this);
-    this.enter_city = this.enter_city.bind(this);
-    this.enter_state = this.enter_state.bind(this);
   }
 
   processNewUser(json) {
@@ -40,32 +31,6 @@ class Register extends React.Component {
     return
   }
 
-  enter_fname(event) {
-    this.setState({ fname: event.target.value });
-  }
-  enter_lname(event) {
-    this.setState({ lname: event.target.value });
-  }
-  enter_email(event) {
-    this.setState({ email: event.target.value });
-  }
-  enter_graddate(event) {
-    this.setState({ graddate: event.target.value });
-  }
-  enter_pword(event) {
-    this.setState({ password: event.target.value });
-  }
-  confirm_pword(event) {
-    return this.state.password === event.target.value;
-  }
-  enter_city(event) {
-    this.setState({ city: event.target.value });
-  }
-  enter_state(event) {
-    this.setState({ state: event.target.value });
-  }
-
-  
   submitAddUser(event) {
     event.preventDefault()
     fetch("http://" + window.location.hostname + ":8000/users/add", {
@@ -87,7 +52,6 @@ class Register extends React.Component {
     .catch((err) => {
       console.error(err);
       });
-
   }
 
   newUserForm() {
@@ -97,41 +61,69 @@ class Register extends React.Component {
           <Form.Row>
             <Form.Group as={Col}>
               <Form.Label>First Name</Form.Label>
-              <Form.Control required onChange={this.enter_fname} placeholder="First Name"/>
+              <Form.Control required onChange={(event) => this.setState({ fname: event.target.value })} placeholder="First Name"/>
             </Form.Group>
             <Form.Group as={Col}>
               <Form.Label>Last Name</Form.Label>
-              <Form.Control required onChange={this.enter_lname} placeholder="Last Name"/>
+              <Form.Control required onChange={(event) => this.setState({ lname: event.target.value })} placeholder="Last Name"/>
             </Form.Group>
           </Form.Row>
           <Form.Row>
             <Form.Group as={Col}>
               <Form.Label>Email</Form.Label>
-              <Form.Control type="email" required onChange={this.enter_email} placeholder="jbiden@whitehouse.gov"/>
-            </Form.Group>
-            <Form.Group as={Col}>
-              <Form.Label>Graduation Date (MM/YYYY)</Form.Label>
-              <Form.Control required onChange={this.enter_graddate} pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" placeholder="2020-08-15"/>
+              <Form.Control type="email" required onChange={(event) => this.setState({ email: event.target.value })} placeholder="jbiden@whitehouse.gov"/>
             </Form.Group>
           </Form.Row>
           <Form.Row>
             <Form.Group as={Col}>
               <Form.Label>Enter password</Form.Label>
-              <Form.Control required type="password" onChange={this.enter_pword} placeholder=""/>
+              <Form.Control required type="password" onChange={(event) =>  this.setState({ password: event.target.value })} placeholder=""/>
             </Form.Group>
             <Form.Group as={Col}>
               <Form.Label>Confirm password</Form.Label>
-              <Form.Control required type="password" validator={this.confirm_pword} placeholder="Last Name"/>
+              <Form.Control required type="password" validator={(event) => (this.state.password === event.target.value)} placeholder="Last Name"/>
             </Form.Group>
           </Form.Row>
           <Form.Row>
             <Form.Group as={Col}>
               <Form.Label>City</Form.Label>
-              <Form.Control required onChange={this.enter_city} placeholder="Chicago"/>
+              <Form.Control required onChange={(event) => this.setState({ city: event.target.value })} placeholder="Chicago"/>
             </Form.Group>
             <Form.Group as={Col}>
               <Form.Label>State abbreviation</Form.Label>
-              <Form.Control required onChange={this.enter_state} pattern="[A-Z]{2}" placeholder="IL"/>
+              <Form.Control required onChange={(event) => this.setState({ state: event.target.value })} pattern="[A-Z]{2}" placeholder="IL"/>
+            </Form.Group>
+          </Form.Row>
+          <Form.Row>
+            <Form.Group as={Col}>
+              <Form.Label>User Type</Form.Label>
+              <Form.Control
+                  as="select"
+                  onChange={(event) =>
+                    this.setState({ userType: event.target.value })
+                  }
+                >
+                  <option>Rider</option>
+                  <option>Driver</option>
+                </Form.Control>
+            </Form.Group>
+            <Form.Group hidden={this.state.userType != "Driver"} as={Col}>
+            <Form.Label>Number of seats</Form.Label>
+                <Form.Control
+                  as="select"
+                  onChange={(event) =>
+                    this.setState({ carCapacity: event.target.value })
+                  }
+                >
+                  <option>1</option>
+                  <option>2</option>
+                  <option>3</option>
+                  <option>4</option>
+                  <option>5</option>
+                  <option>6</option>
+                  <option>7</option>
+                  <option>8</option>
+                </Form.Control>
             </Form.Group>
           </Form.Row>
           <Form.Row>

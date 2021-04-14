@@ -19,16 +19,18 @@ stages = {
 */ 
 
 route = {
+    "id": "ID of the created route",
     "src": "Source",
     "dest": "Destination",
+    "riders": "Number of riders. Int.",
     "token": "User token",
-    "userRouteId": "ID of the created route",
-    "userRoutePrice": "Price of the created route",
-    "userRouteDistance": "Distance of the created route",
+    "price": "Price of the created route",
+    "dist_trip": "Distance of the created route",
+    "time_trip": "Time of the created route",
     "status": 0, // Integer representing stage. See "Stages" informaiton. 
     "driver": "Driver name", // 'null' when driver isn't assigned
-    "driver_src_dist": "Distance the driver must drive to get to source",
-    "driver_src_time": "Driving time to source for driver"
+    "dist_src": "Distance the driver must drive to get to source",
+    "time_src": "Driving time to source for driver"
 }
 
 // Required methods
@@ -44,6 +46,8 @@ function submitRoute(newRoute) {
      * Expected behavior: 
      * Create a new route ID with the provided information, tied to the user. 
      * Return a built "route" object.
+     * 
+     * The route will now circulate in a queue, and offered to different drivers. 
      */ 
     return newRoute; 
 }
@@ -57,12 +61,13 @@ function getRouteById(userRouteId) {
    return userRouteId;
 }
 
-function getDriverRoutes(token, latitude, longitude) {
+function getDriverRoutes(token, latitude, longitude, seats) {
     /* Get all routes that a driver with a given token can claim. 
      * 
      * Identify the driver based on their token. 
-     * Search for all routes that have a status of 1 (submitted, not claimed)
-     * Calculate a distance and time to those routes using the latitude and longitude provided. 
+     * Search for all routes that have a status of 1 (submitted, not claimed). 
+     * Filter the routes based on the number of passengers in them. 
+     * Calculate a distance and time to those routes using the latitude and longitude provided.
      * Build up "route" object with that information for each route, and return them all. 
      */ 
     return

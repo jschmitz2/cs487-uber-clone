@@ -38,7 +38,7 @@ class Home extends React.Component {
       userRouted: false,
       userRouteId: null,
       userRoutePrice: null,
-      userRouteDist: null
+      userRouteDist: null,
     };
     this.map = null;
     this.renderMap = this.renderMap.bind(this);
@@ -47,25 +47,27 @@ class Home extends React.Component {
 
   getRouteInfo() {
     /* API ENDPOINT
-     * 
-     * Arguments: 
-     * src: String representing start point. 
+     *
+     * Arguments:
+     * src: String representing start point.
      * dest: String representing end point.
-     * token: String. The user's token.  
-     * 
-     * Expected behavior: 
-     * Create a new route ID with the provided information, tied to the user. 
+     * token: String. The user's token.
+     * numRiders: Int. The number of riders. 
+     *
+     * Expected behavior:
+     * Create a new route ID with the provided information, tied to the user.
      * Return a built "route" object.
-    */ 
+     */
     // fetch() and get data
     // .then((res) => res.json)
-    // .then((json) => { 
+    // .then((json) => {
     this.setState({
       userRouted: true,
       userRouteId: Math.floor(Math.random() * 100),
       userRoutePrice: Math.random() * 40,
-      userRouteDist: Math.random() * 20
-    })
+      userRouteDist: Math.random() * 20,
+    });
+    console.log(this.state);
   }
 
   renderMap() {
@@ -106,12 +108,14 @@ class Home extends React.Component {
   }
 
   getUserRouteInfo() {
-    if(this.state.userRouted) {
-      return <div>
-        <h3>Route Info</h3>
-        <p>Price: {this.state.userRoutePrice}</p>
-        <p>Distance: {this.state.userRouteDist}</p>
-      </div>
+    if (this.state.userRouted) {
+      return (
+        <div>
+          <h3>Route Info</h3>
+          <p>Price: {this.state.userRoutePrice}</p>
+          <p>Distance: {this.state.userRouteDist}</p>
+        </div>
+      );
     }
   }
 
@@ -143,6 +147,24 @@ class Home extends React.Component {
                   }
                 />
               </Form.Group>
+              <Form.Group controlId="formBasicRiders">
+                <Form.Label>Number of riders</Form.Label>
+                <Form.Control
+                  as="select"
+                  onChange={(event) =>
+                    this.setState({ numRiders: event.target.value })
+                  }
+                >
+                  <option>1</option>
+                  <option>2</option>
+                  <option>3</option>
+                  <option>4</option>
+                  <option>5</option>
+                  <option>6</option>
+                  <option>7</option>
+                  <option>8</option>
+                </Form.Control>
+              </Form.Group>
               <ButtonDiv>
                 <Button
                   variant="secondary"
@@ -161,7 +183,9 @@ class Home extends React.Component {
                   disabled={!this.state.userRouted}
                   onClick={(event) => {
                     event.preventDefault();
-                    document.location.replace("/user/route?userRouteId=" + this.state.userRouteId)
+                    document.location.replace(
+                      "/user/route?userRouteId=" + this.state.userRouteId
+                    );
                   }}
                 >
                   Request Ride

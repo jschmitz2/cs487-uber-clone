@@ -6,6 +6,7 @@ import keys from "../keys";
 import Login from "../components/login";
 import RideRequest from "../components/rideRequest";
 import Modal from "react-bootstrap/Modal";
+import ButtonGroup from 'react-bootstrap/ButtonGroup'
 
 const HeadingStyled = styled.h1``;
 
@@ -61,8 +62,9 @@ class Driver extends React.Component {
       showRouteModal: false,
       claimedRoute: {
         src: "10 W. 31st St., Chicago, IL",
-        dest: "Sears Tower"
+        dest: "Sears Tower",
       },
+      sort: "price"
     };
     this.map = null;
     this.claimFunc = this.claimFunc.bind(this);
@@ -76,7 +78,22 @@ class Driver extends React.Component {
   }
 
   componentDidMount() {
-    // fetch() to get all routes 
+    // fetch() to get all routes
+    let rides_gen = [];
+    for (let i = 0; i < 10; i++) {
+      rides_gen.push({
+        id: i,
+        dist_trip: Math.random() * 5,
+        dist_src: Math.random() * 3,
+        price: Math.random() * 20,
+        time_src: Math.random() * 10,
+        time_trip: Math.random() * 20,
+        src: "10 W. 31st St., Chicago, IL",
+        dest: "Sears Tower",
+        riders: Math.floor(Math.random() * 5 + 1)
+      });
+    }
+    this.setState({ rides: rides_gen });
   }
 
   renderMap() {
@@ -127,22 +144,29 @@ class Driver extends React.Component {
     // fetch() to tell backend that the route was claimed
   }
 
+  calc_hourly(ride) { 
+    return ride.price.toFixed(2) / (ride.time_src + ride.time_trip);
+  }
+
+  sortRides(rides, sortBy) {
+    if(sortBy == "price") {
+      return rides.sort((a, b) => b.price - a.price); 
+    } else if (sortBy == "time_src") {
+      return rides.sort((a, b) => a.time_src - b.time_src);
+    } else if (sortBy == "hourly") {
+      return rides.sort((a, b) => this.calc_hourly(b) - this.calc_hourly(a))
+    }
+  }
+
   render() {
     this.renderMap();
-    let rides_gen = [];
-    for (let i = 0; i < 10; i++) {
-      rides_gen.push({
-        id: i,
-        dist_trip: Math.random() * 5,
-        dist_src: Math.random() * 3,
-        price: Math.random() * 20,
-        src: "10 W. 31st St., Chicago, IL",
-        dest: "Sears Tower",
-      });
+    if(this.state.rides == null) {
+      return null;
     }
-
-    let rideRequests = rides_gen.map((x) => (
+    let ridesSorted = this.sortRides(this.state.rides, this.state.sort);
+    let rideRequests = ridesSorted.map((x) => (
       <RideRequest
+        key={x.id}
         claimFunc={() => this.claimFunc(x)}
         previewFunc={() =>
           this.setState({ route: x, routed: 0, map_type: "route" })
@@ -152,7 +176,13 @@ class Driver extends React.Component {
     ));
 
     let hideModal = () => this.setState({ showRouteModal: false });
-    let openRouteGoogleMaps = () => window.open("https://www.google.com/maps/dir/?api=1&origin=" + this.state.claimedRoute.src + "&destination=" + this.state.claimedRoute.dest);
+    let openRouteGoogleMaps = () =>
+      window.open(
+        "https://www.google.com/maps/dir/?api=1&origin=" +
+          this.state.claimedRoute.src +
+          "&destination=" +
+          this.state.claimedRoute.dest
+      );
 
     let claimedRideModal = (
       <Modal show={this.state.showRouteModal} onHide={hideModal}>
@@ -180,6 +210,11 @@ class Driver extends React.Component {
         <ContentDiv>
           <Pane>
             <h2>Available Rides</h2>
+            <ButtonGroup aria-label="Basic example">
+              <Button variant={(this.state.sort == "price") ? "primary" : "secondary"} onClick={() => this.setState({ sort: "price"})}>Price</Button>
+              <Button variant={(this.state.sort == "time_src") ? "primary" : "secondary"} onClick={() => this.setState({ sort: "time_src"})}>Time to Source</Button>
+              <Button variant={(this.state.sort == "hourly") ? "primary" : "secondary"} onClick={() => this.setState({ sort: "hourly"})}>Hourly Pay</Button>
+            </ButtonGroup>
             <div>{rideRequests}</div>
           </Pane>
           <Pane>
