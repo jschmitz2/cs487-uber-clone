@@ -46,6 +46,17 @@ class Home extends React.Component {
   }
 
   getRouteInfo() {
+    /* API ENDPOINT
+     * 
+     * Arguments: 
+     * src: String representing start point. 
+     * dest: String representing end point.
+     * token: String. The user's token.  
+     * 
+     * Expected behavior: 
+     * Create a new route ID with the provided information, tied to the user. 
+     * Return a built "route" object.
+    */ 
     // fetch() and get data
     // .then((res) => res.json)
     // .then((json) => { 

@@ -75,6 +75,10 @@ class Driver extends React.Component {
     }
   }
 
+  componentDidMount() {
+    // fetch() to get all routes 
+  }
+
   renderMap() {
     if (this.state.location == null) {
       return;

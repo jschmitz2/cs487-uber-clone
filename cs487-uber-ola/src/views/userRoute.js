@@ -38,7 +38,8 @@ class UserRoute extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      route: null
+      route: null,
+      location: null
     };
 
     let urlParams = new URLSearchParams(window.location.search);
@@ -48,7 +49,7 @@ class UserRoute extends React.Component {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (loc) => this.setState({ location: loc }),
-        () => alert("Can't access location!")
+        () => console.error("Error: Can't access user location!")
       );
     }
     this.updateRouteStatus = this.updateRouteStatus.bind(this);
@@ -92,9 +93,9 @@ class UserRoute extends React.Component {
             "https://www.google.com/maps/embed/v1/place?key=" +
             keys.gmaps +
             "&q=" +
-            this.state.location.coords.latitude +
+            (this.state.location == null ? "41.846011" : this.state.location.coords.latitude) +
             ", " +
-            this.state.location.coords.longitude +
+            (this.state.location == null ? "-87.646619" : this.state.location.coords.longitude) +
             "&zoom=14"
           }
           width="500px"
