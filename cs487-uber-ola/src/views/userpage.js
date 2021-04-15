@@ -37,11 +37,24 @@ class UserPage extends React.Component {
     super(props);
   }
   render() {
+    let content = null;
+    if((Cookies.get("userType")) == "Driver") {
+      content = <div>
+        <p>Total rides driven: {Math.floor(Math.random() * 40)}.</p>
+        <p>Total revenue: ${Math.floor(Math.random() * 800)}.</p>
+      </div>
+    } else {
+      content = <div>
+      <p>Total rides taken: {Math.floor(Math.random() * 40)}.</p>
+      <p>Total money spent: ${Math.floor(Math.random() * 800)}.</p>
+    </div>
+    }
     return (
       <PageDiv>
         <ContentDiv>
             <h1>Your Account</h1>
-            <p>Your name is {Cookies.get("fname")}. You're a {Cookies.get("userType")}. That's all I know!</p>
+            <p>Your name is {Cookies.get("fname")}. You're a {Cookies.get("userType")}.</p>
+            {content}
             <button onClick={() => {Cookies.remove("fname"); Cookies.remove("token"); Cookies.remove("userType"); document.location.replace("/landing")}}>Click here to log out</button>
         </ContentDiv>
       </PageDiv>
