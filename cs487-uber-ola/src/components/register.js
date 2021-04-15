@@ -16,8 +16,8 @@ class Register extends React.Component {
       password: null,
       pic: null,
       graddate: null,
-      city: null,
-      state: null,
+      plate: null,
+      vehicle_desc: null,
       newUser: null
     };
 
@@ -43,9 +43,8 @@ class Register extends React.Component {
         lname: this.state.lname,
         password: this.state.password,
         email: this.state.email,
-        graddate: this.state.graddate,
-        city: this.state.city,
-        state: this.state.state
+        vehicle_desc: this.state.vehicle_desc,
+        plate: this.state.plate
       })})
     .then((res) => res.json())
     .then((json) => this.processNewUser(json))
@@ -86,16 +85,6 @@ class Register extends React.Component {
           </Form.Row>
           <Form.Row>
             <Form.Group as={Col}>
-              <Form.Label>City</Form.Label>
-              <Form.Control required onChange={(event) => this.setState({ city: event.target.value })} placeholder="Chicago"/>
-            </Form.Group>
-            <Form.Group as={Col}>
-              <Form.Label>State abbreviation</Form.Label>
-              <Form.Control required onChange={(event) => this.setState({ state: event.target.value })} pattern="[A-Z]{2}" placeholder="IL"/>
-            </Form.Group>
-          </Form.Row>
-          <Form.Row>
-            <Form.Group as={Col}>
               <Form.Label>User Type</Form.Label>
               <Form.Control
                   as="select"
@@ -124,6 +113,16 @@ class Register extends React.Component {
                   <option>7</option>
                   <option>8</option>
                 </Form.Control>
+            </Form.Group>
+            </Form.Row>
+          <Form.Row hidden={this.state.userType != "Driver"}>
+            <Form.Group as={Col}>
+              <Form.Label>Vehicle Description</Form.Label>
+              <Form.Control required={this.state.userType == "Driver"} onChange={(event) =>  this.setState({ vehicle_desc: event.target.value })} placeholder="Grey Honda Accord"/>
+            </Form.Group>
+            <Form.Group as={Col}>
+              <Form.Label>License Plate</Form.Label>
+              <Form.Control required={this.state.userType == "Driver"} onChange={(event) =>  this.setState({ plate: event.target.value })} placeholder="F3J-LMA"/>
             </Form.Group>
           </Form.Row>
           <Form.Row>

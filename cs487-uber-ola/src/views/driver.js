@@ -46,7 +46,9 @@ class DriverNavInfo extends React.Component {
     }
     return (
       <div>
-        <p>Route information goes here.</p>
+        <p>Route source: {this.route.src}</p>
+        <p>Route destination: {this.route.dest}</p>
+        <p>Route price: {this.route.price.toFixed(2)}</p>
       </div>
     );
   }
@@ -172,6 +174,7 @@ class Driver extends React.Component {
           this.setState({ route: x, routed: 0, map_type: "route" })
         }
         req={x}
+        borderFunc={() => (this.state.route == x)}
       />
     ));
 
@@ -193,11 +196,11 @@ class Driver extends React.Component {
           <DriverNavInfo route={this.state.claimedRoute} />
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="primary" onClick={openRouteGoogleMaps}>
+          <Button variant="secondary" onClick={openRouteGoogleMaps}>
             Open route in Google Maps
           </Button>
-          <Button variant="secondary" onClick={hideModal}>
-            Close
+          <Button variant="primary" onClick={hideModal}>
+            Route Completed
           </Button>
         </Modal.Footer>
       </Modal>

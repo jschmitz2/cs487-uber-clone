@@ -35,14 +35,20 @@ border-radius: 5px;
 class RideRequest extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      border: false
+    }
     this.req = props.req;
     this.previewFunc = props.previewFunc;
     this.claimFunc = props.claimFunc;
+    this.borderFunc = props.borderFunc;
   }
 
   render() {
+    console.log(this);
+    console.log(this.borderFunc());
     return (
-      <ReqContainer>
+      <ReqContainer style={{border: ((this.borderFunc()) ? "solid 1px black" : "")}}>
         <HeaderFlex>
         <RideRequestHeading>Ride Request</RideRequestHeading>
         <RideRequestHeading>{this.req.riders} rider{(this.req.riders != 1) ? "s" : ""}</RideRequestHeading>
@@ -73,7 +79,7 @@ class RideRequest extends React.Component {
         </RowFlex>
         <RowFlex>
           <RequestButton onClick={this.claimFunc}>Drive</RequestButton>
-          <RequestButton onClick={this.previewFunc}>See Route Info</RequestButton>
+          <RequestButton onClick={() => {this.setState({ border: true }); return this.previewFunc()}}>See Route Info</RequestButton>
         </RowFlex>
       </ReqContainer>
     );

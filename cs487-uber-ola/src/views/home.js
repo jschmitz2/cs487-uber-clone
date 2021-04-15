@@ -112,8 +112,8 @@ class Home extends React.Component {
       return (
         <div>
           <h3>Route Info</h3>
-          <p>Price: {this.state.userRoutePrice}</p>
-          <p>Distance: {this.state.userRouteDist}</p>
+          <p>Price: ${this.state.userRoutePrice.toFixed(2)}</p>
+          <p>Distance: {this.state.userRouteDist.toFixed(2)}</p>
         </div>
       );
     }

@@ -82,7 +82,7 @@ class UserRoute extends React.Component {
   }
 
   renderMap() {
-    if (this.state.location == null) {
+    if (this.state.route == null) {
       return;
     }
     if (this.state.routed != 1) {
@@ -92,10 +92,7 @@ class UserRoute extends React.Component {
           src={
             "https://www.google.com/maps/embed/v1/place?key=" +
             keys.gmaps +
-            "&q=" +
-            (this.state.location == null ? "41.846011" : this.state.location.coords.latitude) +
-            ", " +
-            (this.state.location == null ? "-87.646619" : this.state.location.coords.longitude) +
+            "&q=" + this.state.route.src + 
             "&zoom=14"
           }
           width="500px"
@@ -133,7 +130,7 @@ class UserRoute extends React.Component {
             {this.progressBar(this.state.route.stage)}
           </Pane>
           <Pane>
-            <h2>Your location</h2>
+            <h2>Pickup Location</h2>
             {this.map}
           </Pane>
         </ContentDiv>
