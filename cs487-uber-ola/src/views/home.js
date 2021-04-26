@@ -3,6 +3,8 @@ import styled from "styled-components";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import keys from "../keys";
+import Col from "react-bootstrap/Col";
+import ButtonGroup from "react-bootstrap/ButtonGroup";
 
 const HeadingStyled = styled.h1``;
 
@@ -25,9 +27,18 @@ const PageDiv = styled.div`
 `;
 
 const ButtonDiv = styled.div`
+  margin-top: 10px;
   display: flex;
   justify-content: space-between;
 `;
+
+const RouteInfoDiv = styled.div`
+  background: white;
+  padding: 5px;
+  margin: 10px;
+  border-radius: 10px;
+`;
+
 class Home extends React.Component {
   constructor(props) {
     super(props);
@@ -39,6 +50,29 @@ class Home extends React.Component {
       userRouteId: null,
       userRoutePrice: null,
       userRouteDist: null,
+      newCard: false,
+      enterSrc: "enter",
+      enterDest: "enter",
+      user: {
+        cards: [
+          {
+            id: 3513358,
+            number: "2513 8257 3512 5238",
+            holder: "Discover",
+            exp: "05/31",
+          },
+        ],
+        fav_loc: [
+          {
+            id: 0,
+            loc: "1012 W 31st Pl., Chicago, IL",
+          },
+          {
+            id: 1,
+            loc: "1212 S. Michigan, Chicago, IL",
+          },
+        ],
+      },
     };
     this.map = null;
     this.renderMap = this.renderMap.bind(this);
@@ -52,7 +86,7 @@ class Home extends React.Component {
      * src: String representing start point.
      * dest: String representing end point.
      * token: String. The user's token.
-     * numRiders: Int. The number of riders. 
+     * numRiders: Int. The number of riders.
      *
      * Expected behavior:
      * Create a new route ID with the provided information, tied to the user.
@@ -110,11 +144,11 @@ class Home extends React.Component {
   getUserRouteInfo() {
     if (this.state.userRouted) {
       return (
-        <div>
+        <RouteInfoDiv>
           <h3>Route Info</h3>
           <p>Price: ${this.state.userRoutePrice.toFixed(2)}</p>
           <p>Distance: {this.state.userRouteDist.toFixed(2)}</p>
-        </div>
+        </RouteInfoDiv>
       );
     }
   }
@@ -127,25 +161,99 @@ class Home extends React.Component {
           <Pane>
             <Form>
               <Form.Group controlId="formBasicEmail">
-                <Form.Label>Source</Form.Label>
-                <Form.Control
-                  type="address"
-                  placeholder="123 Source Avenue"
-                  onChange={(event) =>
-                    this.setState({ src: event.target.value })
-                  }
-                />
+                <ButtonGroup aria-label="Basic example">
+                  <Button
+                    variant={
+                      this.state.enterSrc == "enter" ? "primary" : "secondary"
+                    }
+                    onClick={() => this.setState({ enterSrc: "enter" })}
+                  >
+                    Enter Source
+                  </Button>
+                  <Button
+                    variant={
+                      this.state.enterSrc == "select" ? "primary" : "secondary"
+                    }
+                    onClick={() => this.setState({ enterSrc: "select" })}
+                  >
+                    Choose from Favorites
+                  </Button>
+                </ButtonGroup>
+                <Form.Group hidden={this.state.enterSrc != "enter"}>
+                  <Form.Label>Enter Source</Form.Label>
+                  <Form.Control
+                    type="address"
+                    placeholder="123 Source Avenue"
+                    onChange={(event) =>
+                      this.setState({ src: event.target.value })
+                    }
+                  />
+                  <ButtonDiv>
+                    <Button>Add to favorites</Button>
+                  </ButtonDiv>
+                </Form.Group>
+                <Form.Group hidden={this.state.enterSrc != "select"}>
+                  <Form.Label>Enter Source</Form.Label>
+                  <Form.Control
+                    as="select"
+                    onChange={(event) =>
+                      this.setState({ src: event.target.value })
+                    }
+                  >
+                    <option>Please Select...</option>
+                    {this.state.user.fav_loc.map((x) => (
+                      <option value={x.loc}>{x.loc}</option>
+                    ))}
+                  </Form.Control>
+                </Form.Group>
               </Form.Group>
+              <Form.Group controlId="formBasicEmail">
+                <ButtonGroup aria-label="Basic example">
+                  <Button
+                    variant={
+                      this.state.enterDest == "enter" ? "primary" : "secondary"
+                    }
+                    onClick={() => this.setState({ enterDest: "enter" })}
+                  >
+                    Enter Destination
+                  </Button>
+                  <Button
+                    variant={
+                      this.state.enterDest == "select" ? "primary" : "secondary"
+                    }
+                    onClick={() => this.setState({ enterDest: "select" })}
+                  >
+                    Choose from Favorites
+                  </Button>
+                </ButtonGroup>
+                <Form.Group hidden={this.state.enterDest != "enter"}>
+                  <Form.Label>Enter Destination</Form.Label>
+                  <Form.Control
+                    type="address"
+                    placeholder="123 Source Avenue"
+                    onChange={(event) =>
+                      this.setState({ dest: event.target.value })
+                    }
+                  />
+                  <ButtonDiv>
+                    <Button>Add to favorites</Button>
+                  </ButtonDiv>
+                </Form.Group>
+                <Form.Group hidden={this.state.enterDest != "select"}>
+                  <Form.Label>Enter Destination</Form.Label>
+                  <Form.Control
+                    as="select"
+                    onChange={(event) =>
+                      this.setState({ dest: event.target.value })
+                    }
+                  >
+                    <option>Please Select...</option>
 
-              <Form.Group controlId="formBasicPassword">
-                <Form.Label>Destination</Form.Label>
-                <Form.Control
-                  type="address"
-                  placeholder="456 Destination Drive"
-                  onChange={(event) =>
-                    this.setState({ dest: event.target.value })
-                  }
-                />
+                    {this.state.user.fav_loc.map((x) => (
+                      <option value={x.loc}>{x.loc}</option>
+                    ))}
+                  </Form.Control>
+                </Form.Group>
               </Form.Group>
               <Form.Group controlId="formBasicRiders">
                 <Form.Label>Number of riders</Form.Label>
@@ -165,6 +273,48 @@ class Home extends React.Component {
                   <option>8</option>
                 </Form.Control>
               </Form.Group>
+              <Form.Group controlId="formBasicPassword">
+                <Form.Label>Credit Card</Form.Label>
+                <Form.Control
+                  as="select"
+                  onChange={(event) =>
+                    this.setState({ newCard: event.target.value })
+                  }
+                >
+                  {this.state.user.cards.map((x) => (
+                    <option value={x.id}>
+                      {x.holder} ending in {x.number.substr(-4)}
+                    </option>
+                  ))}
+                  <option value="new">Add New</option>
+                </Form.Control>
+              </Form.Group>
+              <Form.Group
+                hidden={this.state.newCard != "new"}
+                as="row"
+                controlId="formNewCard"
+              >
+                <Form.Label>New Card Number</Form.Label>
+                <Form.Control as="input" placeholder="1123 4567 8910 1112" />
+                <Form.Row>
+                  <Col>
+                    <Form.Label>Expiration Date</Form.Label>
+                    <Form.Control
+                      as="input"
+                      maxLength={5}
+                      placeholder="05/21"
+                    />
+                  </Col>
+                  <Col>
+                    <Form.Label>Security Code</Form.Label>
+                    <Form.Control as="input" maxLength={3} placeholder="543" />
+                  </Col>
+                </Form.Row>
+                <ButtonDiv>
+                  <Button variant="primary">Add Card</Button>
+                </ButtonDiv>
+              </Form.Group>
+
               <ButtonDiv>
                 <Button
                   variant="secondary"
