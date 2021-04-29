@@ -19,8 +19,9 @@ class DriverORM(Base):
     fname = Column(String(32), nullable=False)
     lname = Column(String(32), nullable=False)
     email = Column(String(32), nullable=False, unique=True)
-    pic = Column(String(128))   
-    #password? 
+    pic = Column(String(128))
+    salt = Column(String(32), nullable=False)
+    hashed = Column(String(32), nullable=False)   
     phoneNumber = Column(Integer, nullable=False)
     licensePlate = Column(String(32), nullable=False)
     carMake = Column(String(32), nullable=False)
@@ -30,7 +31,11 @@ class DriverORM(Base):
     ada = Column(bool, nullable = False) 
     active = Column(bool, nullable = False)
 
-    # rides = relationship("RideHistory") is this necessary?
+    rides = relationship("RideHistory") #include ride id, user id, driver id, source, dest, price 
+    
+    tokens = relationship("TokenORM")
+
+
 
 
 
@@ -67,11 +72,15 @@ class RiderORM(Base):
     fname = Column(String(32), nullable=False)
     lname = Column(String(32), nullable=False)
     pic = Column(String(128))
+    salt = Column(String(32), nullable=False)
+    hashed = Column(String(32), nullable=False)
     creditCard = Column(String(32), nullable=False) #making it a part of rider instead of relation cuz it easier tbh - realistically this makes more sense as a table of cards, but ¯\_(ツ)_/¯ 
     phoneNumber = Column(Integer, nullable=False)
     ada = Column(bool, nullable = False)
 
     favSpots = relationship("FavSpotsORM") 
+    tokens = relationship("TokenORM")
+    creditCards = relationship("CardsORM") 
 
 
 class RiderModel(BaseModel):
