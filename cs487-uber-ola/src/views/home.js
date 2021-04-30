@@ -51,7 +51,8 @@ class Home extends React.Component {
       userRouteId: null,
       userRoutePrice: null,
       userRouteDist: null,
-      newCard: false,
+      card: "new",
+      
       enterSrc: "enter",
       enterDest: "enter",
       user: null
@@ -60,12 +61,18 @@ class Home extends React.Component {
     this.token = Cookies.get("token");
     this.renderMap = this.renderMap.bind(this);
     this.getRouteInfo = this.getRouteInfo.bind(this);
+    this.addNewCard = this.addNewCard.bind(this);
   }
 
   componentDidMount() {
     fetch("http://" + window.location.hostname + ":8000/rider/get?token=" + this.token)
     .then((res) => res.json())
-    .then((json) => this.setState({ user: json }))
+    .then((json) => {
+      this.setState({ user: json });
+      if(json.cards.length > 0) {
+        this.setState({ card: json.cards[0].id });
+      }
+    })
   }
 
   getRouteInfo() {
@@ -142,11 +149,42 @@ class Home extends React.Component {
     }
   }
 
+  addToFavorites(newLoc) {
+    fetch("http://" + window.location.hostname + ":8000/rider/fav_loc/add?token=" + this.token + "&newLoc=" + newLoc,
+    {
+      "method": "POST"
+    })
+    .then((res) => res.json())
+    .then((json) => {
+      this.setState({ user: json });
+      alert("Location added to favorites!");
+    });
+  }
+
+  addNewCard() {
+    fetch("http://" + window.location.hostname + ":8000/rider/cards/add",
+    {
+      "method": "POST",
+      "body": JSON.stringify({
+        number: this.state.newCardNumber,
+        expiration: this.state.newCardExp,
+        cvc: this.state.newCardCVC,
+        token: this.token
+      })
+    })
+    .then((res) => res.json())
+    .then((json) => {
+      this.setState({ user: json, card: json.cards[json.cards.length - 1].id});
+      alert("New card added!");
+    });
+  }
+
   render() {
     this.renderMap();
     if(this.state.user == null) {
       return null;
     }
+    console.log(this.state.user)
     return (
       <PageDiv>
         <ContentDiv>
@@ -181,7 +219,7 @@ class Home extends React.Component {
                     }
                   />
                   <ButtonDiv>
-                    <Button>Add to favorites</Button>
+                    <Button onClick={() => this.addToFavorites(this.state.src)}>Add to favorites</Button>
                   </ButtonDiv>
                 </Form.Group>
                 <Form.Group hidden={this.state.enterSrc != "select"}>
@@ -228,7 +266,7 @@ class Home extends React.Component {
                     }
                   />
                   <ButtonDiv>
-                    <Button>Add to favorites</Button>
+                    <Button onClick={() => this.addToFavorites(this.state.dest)}>Add to favorites</Button>
                   </ButtonDiv>
                 </Form.Group>
                 <Form.Group hidden={this.state.enterDest != "select"}>
@@ -270,24 +308,24 @@ class Home extends React.Component {
                 <Form.Control
                   as="select"
                   onChange={(event) =>
-                    this.setState({ newCard: event.target.value })
+                    this.setState({ card: event.target.value })
                   }
                 >
                   {this.state.user.cards.map((x) => (
                     <option value={x.id}>
-                      {x.holder} ending in {x.number.substr(-4)}
+                      Card ending in {x.number.substr(-4)}
                     </option>
                   ))}
                   <option value="new">Add New</option>
                 </Form.Control>
               </Form.Group>
               <Form.Group
-                hidden={this.state.newCard != "new"}
+                hidden={this.state.card != "new"}
                 as="row"
                 controlId="formNewCard"
               >
                 <Form.Label>New Card Number</Form.Label>
-                <Form.Control as="input" placeholder="1123 4567 8910 1112" />
+                <Form.Control as="input" onChange={(e) => this.setState({ newCardNumber: e.target.value})} placeholder="1123 4567 8910 1112" />
                 <Form.Row>
                   <Col>
                     <Form.Label>Expiration Date</Form.Label>
@@ -295,15 +333,16 @@ class Home extends React.Component {
                       as="input"
                       maxLength={5}
                       placeholder="05/21"
+                      onChange={(e) => this.setState({ newCardExp: e.target.value})}
                     />
                   </Col>
                   <Col>
                     <Form.Label>Security Code</Form.Label>
-                    <Form.Control as="input" maxLength={3} placeholder="543" />
+                    <Form.Control as="input" maxLength={3} placeholder="543" onChange={(e) => this.setState({ newCardCVC: e.target.value })}/>
                   </Col>
                 </Form.Row>
                 <ButtonDiv>
-                  <Button variant="primary">Add Card</Button>
+                  <Button onClick={this.addNewCard} variant="primary">Add Card</Button>
                 </ButtonDiv>
               </Form.Group>
 

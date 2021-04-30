@@ -77,8 +77,10 @@ class RiderORM(Base):
 
 class CardsModel(BaseModel):    
     id: Optional[int]
-    name: Optional[str]
     number: Optional[str]
+    expiration: Optional[str]
+    cvc: Optional[str]
+    token: Optional[str]
 
     class Config:
         orm_mode = True
@@ -124,8 +126,9 @@ class CardsORM(Base):
     __tablename__ = "cards"
     metadata = metadata
     id = Column(Integer, nullable=False, primary_key=True)
-    name = Column(String(32), nullable=False)
     number = Column(Integer, nullable=False)
+    expiration = Column(String(32))
+    cvc = Column(String(3))
     rid = Column(Integer, ForeignKey("rider.id"))
 
 
