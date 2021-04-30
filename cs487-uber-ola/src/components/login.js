@@ -17,49 +17,44 @@ class Login extends React.Component {
     this.submitLogin = this.submitLogin.bind(this);
   }
 
-  processLogin(json) {
+  processLogin(json, mode) {
     Cookies.set("token", json.token.val, { expires: 15 });
     Cookies.set("fname", json.user.fname, { expires: 15 });
-    document.location.replace("/");
-    return;
+    if (mode == "driver") {
+      document.location.replace("/drive");
+    } else {
+      document.location.replace("/ride");
+    }
   }
 
   submitLogin(event) {
     event.preventDefault();
 
-    // ** PLACEHOLDER ** 
+    // ** PLACEHOLDER **
 
-    Cookies.set("token", (new Date().toLocaleDateString()), { expires: 15 });
-    Cookies.set("fname", this.state.email, { expires: 15 });
-    Cookies.set("userType", this.state.loginType, { expires: 15 });
-
-    if(this.state.loginType == "Driver") {
-      document.location.replace("/drive");
+    if (this.state.loginType == "Driver") {
+      fetch("http://" + window.location.hostname + ":8000/driver/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email: this.state.email,
+          password: this.state.password,
+        }),
+      })
+        .then((res) => res.json())
+        .then((json) => this.processLogin(json, "driver"));
     } else {
-      document.location.replace("/ride")
+      fetch("http://" + window.location.hostname + ":8000/rider/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email: this.state.email,
+          password: this.state.password,
+        }),
+      })
+        .then((res) => res.json())
+        .then((json) => this.processLogin(json, "rider"));
     }
-
-    // ** PLACEHOLDER ** 
-
-
-    console.log(this.state);
-    fetch("http://" + window.location.hostname + ":8000/users/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        password: this.state.password,
-        email: this.state.email,
-        loginType: this.state.loginType,
-      }),
-    })
-      .then((res) => res.json())
-      .then((json) => this.processLogin(json))
-      .catch((err) => {
-        console.error(err);
-      });
   }
+
   loginForm() {
     return (
       <div>
@@ -105,8 +100,12 @@ class Login extends React.Component {
             </Form.Group>
           </Form.Row>
           <Form.Row>
-            <Form.Text className="text-muted" style={{"padding-bottom": "10px"}}>
-              Don't have an account? <a href="/register">Click here</a> to register.
+            <Form.Text
+              className="text-muted"
+              style={{ "padding-bottom": "10px" }}
+            >
+              Don't have an account? <a href="/register">Click here</a> to
+              register.
             </Form.Text>
           </Form.Row>
           <Button variant="primary" type="submit" onClick={this.submitLogin}>
