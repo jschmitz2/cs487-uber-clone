@@ -16,6 +16,7 @@ from sqlalchemy.exc import IntegrityError
 import requests
 import json
 import math
+import key
 
 app = FastAPI()
 
@@ -158,9 +159,9 @@ def login_driver(user_creds: LoginData):
 def getLongLat(list):
     geo = list[0]
     coords = geo['geometry']
-    bounds = coords['bounds']
-    northEastCoords = bounds["northeast"] #ive decided this are the coords we will use lol
-    lat = northEastCoords["lat"]
+    bounds = coords['location']
+    northEastCoords = bounds #ive decided this are the coords we will use lol
+    lat = northEastCoords["lat"] #changed to use location instead of bounds, just don't feel like renaming lol
     long = northEastCoords["lng"]
 
     return (long,lat)
@@ -184,6 +185,38 @@ def find_distance(lo1, la1, lo2, la2): #credit : https://www.kite.com/python/ans
     return str(distance)
 
 
+
+def googleMapsTimeDist(lo1,la1,lo2,la2): #cuz i return time then dist
+
+    slo1 = str(lo1).replace(" ", "")
+    sla1 = str(la1).replace(" ", "")
+    slo2 = str(lo2).replace(" ", "")
+    sla2 = str(la2).replace(" ", "")
+
+    origin = "origin=" + sla1 + "," + slo1
+    destination = "destination=" + sla2 + "," + slo2
+    thekey = "key=" + key.key
+
+    url = "https://maps.googleapis.com/maps/api/directions/json?" + str(origin) + "&" + str(destination) +"&" + thekey
+
+    googleReturn = requests.get(url)
+    print(url)
+    src = googleReturn.json()["routes"]
+    dict = src[0]
+    legs = dict["legs"]
+    next = legs[0]
+
+    duration = next["duration"]
+    dist = next["distance"]
+
+    durTime = duration["text"]
+    durDist = dist["text"]
+
+    return (durTime, durDist)
+
+
+
+
 def set_price(dist): #uber does $0.85 per mile plus $0.30 per minute
     price = float(dist)*(.85)*(.62) #1 km = 0.62 mile
 
@@ -196,22 +229,22 @@ def submit_route(src: str, dest: str, token: str):
     rider = get_rider(token)
     
 
-    urlSRC = requests.get("https://maps.googleapis.com/maps/api/geocode/json?address=" + src.replace(" ", "+") + "&key=AIzaSyBoLGp9NmYUrAJj2AcQf6G4eelnfwX6R6I") 
-    urlDEST = requests.get("https://maps.googleapis.com/maps/api/geocode/json?address=" + dest.replace(" ", "+") + "&key=AIzaSyBoLGp9NmYUrAJj2AcQf6G4eelnfwX6R6I") 
+    urlSRC = requests.get("https://maps.googleapis.com/maps/api/geocode/json?address=" + src.replace(" ", "+") + "&key=" +key.key) 
+    urlDEST = requests.get("https://maps.googleapis.com/maps/api/geocode/json?address=" + dest.replace(" ", "+") + "&key=" +key.key) 
 
     srcLat = urlSRC.json()["results"]
     
     srcCoords = getLongLat(srcLat)
-    src_lat = srcCoords[0]
-    src_long = srcCoords[1]
+    src_lat = srcCoords[1]
+    src_long = srcCoords[0]
     
     destLat = urlDEST.json()["results"]
     
     destCoords = getLongLat(destLat)
-    dest_lat = destCoords[0]
-    dest_long = destCoords[1]
+    dest_lat = destCoords[1]
+    dest_long = destCoords[0]
 
-    distance = find_distance(src_long,src_lat,dest_long,dest_lat)
+    distance = googleMapsTimeDist(src_long,src_lat,dest_long,dest_lat)
 
     #time =
 
@@ -220,10 +253,10 @@ def submit_route(src: str, dest: str, token: str):
         sourceLong = src_long,
         destLat = dest_lat,
         destLong = dest_long,
-        price = set_price(distance),
+        price = 10,
         riders = 2, #how to set?
-        time = datetime.datetime.now(),
-        distance = distance,
+        time = datetime.datetime.now(), #distance[0] is time of trip
+        distance = distance[1],
         did = 0, #or null?
         rid = rider.id,
         status = 0, #init to 0 
@@ -256,18 +289,56 @@ def getRouteByID(id: int):
     raise ValueError
 
 
+@app.post("/rides/id/complete")
+def completeRide(id:int):
+    s = orm_parent_session()
+
+    for r in s.query(RideHistoryORM).filter(RideHistoryORM.id == id):
+        s.query(RideHistoryORM).filter(RideHistoryORM.id == id).update({RideHistoryORM.status: 3})
+        s.commit()
+        route = RideHistoryModel.from_orm(r)
+        s.close()
+        return route
+    s.close()
+    raise ValueError
+
+
+app.post("/rides/request")
+def requestRide(id:int):
+    s = orm_parent_session()
+
+    for r in s.query(RideHistoryORM).filter(RideHistoryORM.id == id):
+        s.query(RideHistoryORM).filter(RideHistoryORM.id == id).update({RideHistoryORM.status: 1})
+        s.commit()
+        route = RideHistoryModel.from_orm(r)
+        s.close()
+        return route
+    s.close()
+    raise ValueError
+
+
+
+
 
 @app.get("/driver/routes")
-def getDriverRoutes(token: str, latititude: float, longitude: float, seats: int):
+def getDriverRoutes(token: int, latititude: float, longitude: float, seats: int):
 
     s = orm_parent_session()
     driver = get_driver(token)
 
     routes = []
 
-    for r in s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (seats+1)).order_by(asc(RideHistoryORM.riders)).all(): #idk if <= is supported lol i couldn't find it in the documentation so 
+    for r in s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (seats+1)): #idk if <= is supported lol i couldn't find it in the documentation so 
         routeFound = RideHistoryModel.from_orm(r)
+        srcLat = routeFound.sourceLat
+        srcLng = routefoun.sourceLong
         routes.append(routeFound)
+        distTime = googleMapsTimeDist(srcLng,srcLat,longitude,latititude)
+        time = distTime[0]
+        dist = distTime[1]
+        s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (seats+1)).update({RideHistoryORM.time: time})
+
+
         #calculate dist and time - update route
 
     

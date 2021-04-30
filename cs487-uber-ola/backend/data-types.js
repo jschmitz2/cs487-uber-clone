@@ -53,7 +53,7 @@ function submitRoute(newRoute) { //THIS DONE
 }
 
 function getRouteById(userRouteId) { //THIS DONE - maybe update route status from 0 to 1 here?
-    
+
     /* Given an ID, find a route. 
      * Build the completed and updated route object, and return. 
      * This will be polled as a lifecycle method to update a progress bar, 
@@ -98,7 +98,7 @@ function getDriverInfo(token) { //WORKS BUT ONLY BY ID RN
     return
 }
 
-function completeRide(token) { //???
+function completeRide(id){ //done
     //update status to 3
     return
 }
