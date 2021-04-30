@@ -361,8 +361,6 @@ def getDriverRoutes(token: str, latititude: float, longitude: float):
         s.commit()
 
 
-        #calculate dist and time - update route
-
     
     s.close()
  

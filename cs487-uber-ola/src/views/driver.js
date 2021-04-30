@@ -81,21 +81,9 @@ class Driver extends React.Component {
 
   componentDidMount() {
     // fetch() to get all routes
-    let rides_gen = [];
-    for (let i = 0; i < 10; i++) {
-      rides_gen.push({
-        id: i,
-        dist_trip: Math.random() * 5,
-        dist_src: Math.random() * 3,
-        price: Math.random() * 20,
-        time_src: Math.random() * 10,
-        time_trip: Math.random() * 20,
-        src: "10 W. 31st St., Chicago, IL",
-        dest: "Sears Tower",
-        riders: Math.floor(Math.random() * 5 + 1)
-      });
-    }
-    this.setState({ rides: rides_gen });
+    fetch("http://" + window.location.hostname + ":8000/driver/routes?token=" + this.token + "latititude=" + this.latitude + "longitude=" + this.longitude)
+    .then((res) => res.json())
+    .then((json) => this.setState({ rides: json }))
   }
 
   renderMap() {
@@ -151,6 +139,7 @@ class Driver extends React.Component {
   }
 
   sortRides(rides, sortBy) {
+    console.log(rides);
     if(sortBy == "price") {
       return rides.sort((a, b) => b.price - a.price); 
     } else if (sortBy == "time_src") {

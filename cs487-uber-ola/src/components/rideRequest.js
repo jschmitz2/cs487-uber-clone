@@ -55,27 +55,27 @@ class RideRequest extends React.Component {
         </HeaderFlex>
         <RowFlex>
           <p>Pay: </p>
-          <p>${this.req.price.toFixed(2)}</p>
+          <p>${this.req.price}</p>
         </RowFlex>
         <RowFlex>
           <p>Distance: </p>
-          <p>{this.req.dist_trip.toFixed(2)} miles</p>
+          <p>{this.req.dist_trip}</p>
         </RowFlex>
         <RowFlex>
           <p>Time: </p>
-          <p>{this.req.time_trip.toFixed(2)} miles</p>
+          <p>{this.req.time}</p>
         </RowFlex>
         <RowFlex>
           <p>Distance to Start: </p>
-          <p>{this.req.dist_src.toFixed(2)} miles</p>
+          <p>{this.req.dist_src}</p>
         </RowFlex>
         <RowFlex>
           <p>Time to Start: </p>
-          <p>{this.req.time_src.toFixed(2)} mins</p>
+          <p>{this.req.time_src}</p>
         </RowFlex>
         <RowFlex>
           <p>Hourly Pay: </p>
-          <p>{(this.req.price.toFixed(2) / (this.req.time_src + this.req.time_trip)).toFixed(2)}$/hr</p>
+          <p>{(this.req.price / (this.req.time_src + this.req.time_trip))}$/hr</p>
         </RowFlex>
         <RowFlex>
           <RequestButton onClick={this.claimFunc}>Drive</RequestButton>
