@@ -22,7 +22,7 @@ class DriverORM(Base):
     pic = Column(String(128), nullable=True)
     salt = Column(String(32), nullable=False)
     hashed = Column(String(32), nullable=False)   
-    phoneNumber = Column(Integer, nullable=False)
+    phoneNumber = Column(String(16), nullable=False)
     licensePlate = Column(String(32), nullable=False)
     carMake = Column(String(32), nullable=False)
     carColor = Column(String(32), nullable=False)
@@ -30,11 +30,6 @@ class DriverORM(Base):
     numSeats = Column(Integer, nullable=False)
     ada = Column(Integer, nullable = False) 
     active = Column(Integer, nullable = False)
-
-
-
-
-
 
 
 class DriverModel(BaseModel):
@@ -45,7 +40,7 @@ class DriverModel(BaseModel):
     email: Optional[str]
     password: Optional[str]
     pic: Optional[str]
-    phoneNumber: Optional[int]
+    phoneNumber: Optional[str]
     licensePlate: Optional[str]
     carMake: Optional[str]
     carColor: Optional[str]
@@ -73,13 +68,29 @@ class RiderORM(Base):
     pic = Column(String(128), nullable=True)
     salt = Column(String(32), nullable=False)
     hashed = Column(String(32), nullable=False)
-    phoneNumber = Column(Integer, nullable=False)
+    phoneNumber = Column(String(16), nullable=False)
     ada = Column(Integer, nullable=True)
 
     favSpots = relationship("FavSpotsORM") 
     cards = relationship("CardsORM") 
 
 
+class CardsModel(BaseModel):    
+    id: Optional[int]
+    name: Optional[str]
+    number: Optional[str]
+
+    class Config:
+        orm_mode = True
+
+
+class FavSpotsModel(BaseModel):
+
+    id: Optional[int]
+    location: Optional[str]
+
+    class Config:
+        orm_mode = True
 
 class RiderModel(BaseModel):
 
@@ -89,10 +100,13 @@ class RiderModel(BaseModel):
     pic: Optional[str]
     email: Optional[str]
     creditCard: Optional[str]
-    phoneNumber: Optional[int]
+    phoneNumber: Optional[str]
     ada: Optional[int]
     password: Optional[str]
     token: Optional[str]
+
+    favSpots: List[FavSpotsModel]
+    cards: List[CardsModel]
 
     class Config:
         orm_mode = True
@@ -102,21 +116,9 @@ class FavSpotsORM(Base):
     __tablename__ = "favspots"
     metadata = metadata
     id = Column(Integer, nullable=False, primary_key=True)
-    name = Column(String(32), nullable=False)
     location = Column(String(32), nullable=False)
     rid = Column(Integer, ForeignKey("rider.id"))
 
-
-
-
-class FavSpotsModel(BaseModel):
-
-    id: Optional[int]
-    name: Optional[str]
-    location: Optional[str]
-
-    class Config:
-        orm_mode = True
 
 class CardsORM(Base):
     __tablename__ = "cards"
@@ -126,13 +128,6 @@ class CardsORM(Base):
     number = Column(Integer, nullable=False)
     rid = Column(Integer, ForeignKey("rider.id"))
 
-class CardsModel(BaseModel):    
-    id: Optional[int]
-    name: Optional[str]
-    number: Optional[str]
-
-    class Config:
-        orm_mode = True
 
 class RideHistoryORM(Base):
     __tablename__ = "rideHistory"

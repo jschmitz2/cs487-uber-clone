@@ -5,6 +5,7 @@ import Button from "react-bootstrap/Button";
 import keys from "../keys";
 import Col from "react-bootstrap/Col";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
+import Cookies from "js-cookie";
 
 const HeadingStyled = styled.h1``;
 
@@ -53,30 +54,18 @@ class Home extends React.Component {
       newCard: false,
       enterSrc: "enter",
       enterDest: "enter",
-      user: {
-        cards: [
-          {
-            id: 3513358,
-            number: "2513 8257 3512 5238",
-            holder: "Discover",
-            exp: "05/31",
-          },
-        ],
-        fav_loc: [
-          {
-            id: 0,
-            loc: "1012 W 31st Pl., Chicago, IL",
-          },
-          {
-            id: 1,
-            loc: "1212 S. Michigan, Chicago, IL",
-          },
-        ],
-      },
+      user: null
     };
     this.map = null;
+    this.token = Cookies.get("token");
     this.renderMap = this.renderMap.bind(this);
     this.getRouteInfo = this.getRouteInfo.bind(this);
+  }
+
+  componentDidMount() {
+    fetch("http://" + window.location.hostname + ":8000/rider/get?token=" + this.token)
+    .then((res) => res.json())
+    .then((json) => this.setState({ user: json }))
   }
 
   getRouteInfo() {
@@ -155,6 +144,9 @@ class Home extends React.Component {
 
   render() {
     this.renderMap();
+    if(this.state.user == null) {
+      return null;
+    }
     return (
       <PageDiv>
         <ContentDiv>
@@ -201,8 +193,8 @@ class Home extends React.Component {
                     }
                   >
                     <option>Please Select...</option>
-                    {this.state.user.fav_loc.map((x) => (
-                      <option value={x.loc}>{x.loc}</option>
+                    {this.state.user.favSpots.map((x) => (
+                      <option value={x.location}>{x.location}</option>
                     ))}
                   </Form.Control>
                 </Form.Group>
@@ -249,8 +241,8 @@ class Home extends React.Component {
                   >
                     <option>Please Select...</option>
 
-                    {this.state.user.fav_loc.map((x) => (
-                      <option value={x.loc}>{x.loc}</option>
+                    {this.state.user.favSpots.map((x) => (
+                      <option value={x.location}>{x.location}</option>
                     ))}
                   </Form.Control>
                 </Form.Group>

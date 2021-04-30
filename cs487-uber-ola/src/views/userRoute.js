@@ -114,6 +114,7 @@ class UserRoute extends React.Component {
 
   render() {
     this.renderMap();
+
     if (this.state.route == null) {
       return null;
     }
