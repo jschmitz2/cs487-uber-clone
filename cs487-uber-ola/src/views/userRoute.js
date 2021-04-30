@@ -6,7 +6,7 @@ import keys from "../keys";
 import Login from "../components/login";
 import RideRequest from "../components/rideRequest";
 import ProgressBar from "react-bootstrap/ProgressBar";
-import Alert from 'react-bootstrap/Alert'
+import Alert from "react-bootstrap/Alert";
 
 const HeadingStyled = styled.h1``;
 
@@ -39,7 +39,7 @@ class UserRoute extends React.Component {
     super(props);
     this.state = {
       route: null,
-      location: null
+      location: null,
     };
 
     let urlParams = new URLSearchParams(window.location.search);
@@ -58,27 +58,14 @@ class UserRoute extends React.Component {
   }
 
   updateRouteStatus() {
-    // fetch() to get the most updated status
-    // in the meantime, hardcode
-    let route = this.state.route;
-    if (route == null) {
-      route = {
-        id: this.userRouteId,
-        price: Math.random() * 20,
-        dist: Math.random() * 14,
-        src: "10 W. 31st St., Chicago, IL",
-        dest: "Sears Tower",
-        dist: Math.random() * 10,
-        stage: 0,
-      };
-      this.setState({ route: route });
-    } else {
-      route.stage += 1;
-      if (route != null && route.stage < 0) {
-        window.clearInterval(this.updateFunc);
-      }
-      this.setState({ route: route });
-    }
+    fetch(
+      "http://" +
+        window.location.hostname +
+        ":8000/rides/id?id=" +
+        this.userRouteId
+    )
+      .then((res) => res.json())
+      .then((json) => this.setState({ route: json }));
   }
 
   renderMap() {
@@ -90,10 +77,10 @@ class UserRoute extends React.Component {
       this.map = (
         <iframe
           src={
-            "https://www.google.com/maps/embed/v1/place?key=" +
+            "https://www.google.com/maps/embed/v1/directions?key=" +
             keys.gmaps +
-            "&q=" + this.state.route.src + 
-            "&zoom=14"
+            "&origin=" + this.state.route.sourceLat + "," + this.state.route.sourceLong + 
+            "&destination=" + this.state.route.destLat + "," + this.state.route.destLong
           }
           width="500px"
           height="700px"
@@ -105,9 +92,27 @@ class UserRoute extends React.Component {
   progressBar(stage) {
     return (
       <ProgressBar>
-        <ProgressBar striped variant={(stage >= 1) ? "success" : "info"} now={20} key={1} label="Route Created"/>
-        <ProgressBar striped variant={(stage >= 2) ? "success" : "info"} now={(stage >= 1) ? 50 : 0} key={1} label="Finding Driver"/>
-        <ProgressBar striped variant={(stage >= 3) ? "success" : "info"} now={(stage >= 2) ? 50 : 0} key={1} label="Driver Arriving"/>
+        <ProgressBar
+          striped
+          variant={stage >= 1 ? "success" : "info"}
+          now={20}
+          key={1}
+          label="Route Created"
+        />
+        <ProgressBar
+          striped
+          variant={stage >= 2 ? "success" : "info"}
+          now={stage >= 1 ? 50 : 0}
+          key={1}
+          label="Finding Driver"
+        />
+        <ProgressBar
+          striped
+          variant={stage >= 3 ? "success" : "info"}
+          now={stage >= 2 ? 50 : 0}
+          key={1}
+          label="Driver Arriving"
+        />
       </ProgressBar>
     );
   }
@@ -124,10 +129,8 @@ class UserRoute extends React.Component {
         <ContentDiv>
           <Pane>
             <h2>Your Route</h2>
-            <p>Source: {this.state.route.src}</p>
-            <p>Destination: {this.state.route.dest}</p>
             <p>Price: {this.state.route.price.toFixed(2)}</p>
-            <p>Distance: {this.state.route.dist.toFixed(2)}</p>
+            <p>Distance: {this.state.route.distance}</p>
             {this.progressBar(this.state.route.stage)}
           </Pane>
           <Pane>
