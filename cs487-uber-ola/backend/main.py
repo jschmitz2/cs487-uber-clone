@@ -213,15 +213,23 @@ def googleMapsTimeDist(lo1,la1,lo2,la2): #cuz i return time then dist
 
 
 def set_price(dist): #uber does $0.85 per mile plus $0.30 per minute
-    price = float(dist)*(.85)*(.62) #1 km = 0.62 mile
+    priceDist = float(dist[1].replace("mi", "").replace(",", ""))*(.85) 
+    if('hours' in dist[0]):
+        list = dist[0].split(" ")
+        priceTime = float(list[0])*60*.3 + float(list[2])*.3
+    else:
+        priceTime = float(dist[0].replace("mins", ""))*(0.30)
 
+    price = priceDist + priceTime
     return str(round(price, 2))
 
 
 @app.post("/rides/add")
 def submit_route(src: str, dest: str, token: str):
     orm_session = orm_parent_session()
-    rider = get_rider(token)
+    rid = get_rid_token(token)["rid"]
+    if(rid == -1):
+        raise HTTPException(422, "User not found!")
     
 
     urlSRC = requests.get("https://maps.googleapis.com/maps/api/geocode/json?address=" + src.replace(" ", "+") + "&key=" +key.key) 
@@ -248,12 +256,12 @@ def submit_route(src: str, dest: str, token: str):
         sourceLong = src_long,
         destLat = dest_lat,
         destLong = dest_long,
-        price = 10,
+        price = set_price(distance),
         riders = 2, #how to set?
         time = datetime.datetime.now(), #distance[0] is time of trip
         distance = distance[1],
         did = 0, #or null?
-        rid = rider.id,
+        rid = rid,
         status = 0, #init to 0 
         dist_src = "far", #how to get src lat and long?
         time_src = "long" #how to estimate time?
@@ -298,7 +306,7 @@ def completeRide(id:int):
     raise ValueError
 
 
-app.post("/rides/request")
+@app.post("/rides/request")
 def requestRide(id:int):
     s = orm_parent_session()
 
@@ -316,22 +324,31 @@ def requestRide(id:int):
 
 
 @app.get("/driver/routes")
-def getDriverRoutes(token: int, latititude: float, longitude: float, seats: int):
+def getDriverRoutes(token: str, latititude: float, longitude: float):
 
     s = orm_parent_session()
-    driver = get_driver(token)
+    did = get_did_token(token)["did"]
+    if(did == -1):
+        raise HTTPException(422, "User not found!")
+
+    seats = get_driver(token).numSeats
+
+
+    
 
     routes = []
 
     for r in s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (seats+1)): #idk if <= is supported lol i couldn't find it in the documentation so 
         routeFound = RideHistoryModel.from_orm(r)
         srcLat = routeFound.sourceLat
-        srcLng = routefoun.sourceLong
+        srcLng = routeFound.sourceLong
         routes.append(routeFound)
         distTime = googleMapsTimeDist(srcLng,srcLat,longitude,latititude)
         time = distTime[0]
         dist = distTime[1]
-        s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (seats+1)).update({RideHistoryORM.time: time})
+        s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (seats+1)).update({RideHistoryORM.time_src: time})
+        s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (seats+1)).update({RideHistoryORM.dist_src: dist})
+        s.commit()
 
 
         #calculate dist and time - update route
@@ -342,39 +359,47 @@ def getDriverRoutes(token: int, latititude: float, longitude: float, seats: int)
     return routes
 
 @app.get("/driver/claim")
-def driverClaimRoute(id: int, userRouteID: int): #id:int was token:str
+def driverClaimRoute(token:str, userRouteID: int):
     s = orm_parent_session()
-    driver = get_driver(id)
+    did = get_did_token(token)["did"]
+    if(did == -1):
+        raise HTTPException(422, "User not found!")
+
+    routeFound = ""
 
     for r in s.query(RideHistoryORM).filter(RideHistoryORM.id == userRouteID):
         s.query(RideHistoryORM).filter(RideHistoryORM.id == userRouteID).update({RideHistoryORM.status: 2})
-        s.query(RideHistoryORM).filter(RideHistoryORM.id == userRouteID).update({RideHistoryORM.did: id})
+        s.query(RideHistoryORM).filter(RideHistoryORM.id == userRouteID).update({RideHistoryORM.did: did})
         s.commit() #i had forgotten this oops
         routeFound = RideHistoryModel.from_orm(r)
 
     return routeFound
 
 @app.get("/rider/history")
-def getRiderInfo(id: int): #was token : str
+def getRiderInfo(token:str): #was token : str
     s = orm_parent_session()
-    rider = get_rider(id)
+    rid = get_rid_token(token)["rid"]
+    if(rid == -1):
+        raise HTTPException(422, "User not found!")
 
     rides = []
 
-    for r in s.query(RideHistoryORM).filter(RideHistoryORM.rid == rider.id).all():
+    for r in s.query(RideHistoryORM).filter(RideHistoryORM.rid == rid).all():
         rideFound = RideHistoryModel.from_orm(r)
         rides.append(rideFound)
 
     return rides
 
 @app.get("/driver/history")
-def getDriverInfo(id:int): #was token : str
+def getDriverInfo(token:str): 
     s = orm_parent_session()
-    driver = get_driver(id)
+    did = get_did_token(token)["did"]
+    if(did == -1):
+        raise HTTPException(422, "User not found!")
 
     rides = []
 
-    for r in s.query(RideHistoryORM).filter(RideHistoryORM.did == id).all():
+    for r in s.query(RideHistoryORM).filter(RideHistoryORM.did == did).all():
         rideFound = RideHistoryModel.from_orm(r)
         rides.append(rideFound)
 
@@ -382,31 +407,9 @@ def getDriverInfo(id:int): #was token : str
 
 
 
-def get_driver(id: int): #id:int was token:str
-
-    s = orm_parent_session()
-    for u in s.query(DriverORM).filter(DriverORM.id == id):
-        driver = DriverModel.from_orm(u)
-        s.close()
-        return driver
-
-    s.close()
-    raise ValueError("No driver found :(")
-    
-
-def get_rider(id: int): #id:int was token:str
-    s = orm_parent_session()
-
-    for u in s.query(RiderORM).filter(RiderORM.id == id):
-        rider = RiderModel.from_orm(u)
-        s.close()
-        return rider
-
-    s.close()
-    raise ValueError("No driver found :(")
 
 @app.get("/rider/get")
-def get_rider(token: str): #id:int was token:str
+def get_rider(token: str):
 
     rid = get_rid_token(token)["rid"]
     if(rid == -1):
@@ -417,6 +420,21 @@ def get_rider(token: str): #id:int was token:str
         rider = RiderModel.from_orm(s.query(RiderORM).filter(RiderORM.id == rid).one())
         s.close()
         return rider
+    except NoResultFound:
+        raise HTTPException(422, "No rider found!")
+
+
+def get_driver(token: str):
+
+    did = get_did_token(token)["did"]
+    if(did == -1):
+        raise HTTPException(422, "User not found!")
+
+    s = orm_parent_session()
+    try:
+        driver = DriverModel.from_orm(s.query(DriverORM).filter(DriverORM.id == did).one())
+        s.close()
+        return driver
     except NoResultFound:
         raise HTTPException(422, "No rider found!")
 
