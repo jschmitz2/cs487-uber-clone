@@ -13,6 +13,9 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
+import requests
+import json
+import math
 
 app = FastAPI()
 
@@ -37,6 +40,7 @@ class HelloResponse(BaseModel):
 
 engine = create_engine("sqlite:///test_db.db")
 orm_parent_session = sessionmaker(bind=engine)
+metadata.create_all(engine)
 orm_session = orm_parent_session()
 
 
@@ -77,7 +81,7 @@ def login_rider(user_creds: LoginData):
     try:
         user = orm_session.query(RiderORM).filter(RiderORM.email == user_creds.email).one()
     except NoResultFound:
-        time.sleep(random.randrange(.5, 2))
+        time.sleep(random.randrange(1,2))
         orm_session.close()
         raise HTTPException(400, "Email not found!")
 
@@ -91,7 +95,7 @@ def login_rider(user_creds: LoginData):
 
     new_token_ORM = TokenORM(
         val = token,
-        uid = user.id #this will be riderID
+        rid = user.id #this will be riderID
     )
 
     orm_session.add(new_token_ORM)
@@ -118,7 +122,7 @@ def login_driver(user_creds: LoginData):
     try:
         user = orm_session.query(DriverORM).filter(DriverORM.email == user_creds.email).one()
     except NoResultFound:
-        time.sleep(random.randrange(.5, 2))
+        time.sleep(random.randrange(1, 2))
         orm_session.close()
         raise HTTPException(400, "Email not found!")
 
@@ -132,7 +136,7 @@ def login_driver(user_creds: LoginData):
 
     new_token_ORM = TokenORM(
         val = token,
-        uid = user.id #this will be riderID
+        did = user.id #this will be driverID
     )
 
     orm_session.add(new_token_ORM)
@@ -151,41 +155,96 @@ def login_driver(user_creds: LoginData):
 
 
 
+def getLongLat(list):
+    geo = list[0]
+    coords = geo['geometry']
+    bounds = coords['bounds']
+    northEastCoords = bounds["northeast"] #ive decided this are the coords we will use lol
+    lat = northEastCoords["lat"]
+    long = northEastCoords["lng"]
+
+    return (long,lat)
+
+def find_distance(lo1, la1, lo2, la2): #credit : https://www.kite.com/python/answers/how-to-find-the-distance-between-two-lat-long-coordinates-in-python
+    R = 6373.0
+
+    lat1 = math.radians(la1)
+    lon1 = math.radians(lo1)
+    lat2 = math.radians(la2)
+    lon2 = math.radians(lo2)
+
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+
+    a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    distance = R * c #in in km :/
+
+    return str(distance)
 
 
+def set_price(dist): #uber does $0.85 per mile plus $0.30 per minute
+    price = float(dist)*(.85)*(.62) #1 km = 0.62 mile
+
+    return str(round(price, 2))
 
 
-@app.post("")#add endpoint route here
+@app.post("/rides/add")
 def submit_route(src: str, dest: str, token: str):
     orm_session = orm_parent_session()
-    UId = get_uid_token(new_post.token)["uid"]
-
-
-
+    rider = get_rider(token)
     
+
+    urlSRC = requests.get("https://maps.googleapis.com/maps/api/geocode/json?address=" + src.replace(" ", "+") + "&key=AIzaSyBoLGp9NmYUrAJj2AcQf6G4eelnfwX6R6I") 
+    urlDEST = requests.get("https://maps.googleapis.com/maps/api/geocode/json?address=" + dest.replace(" ", "+") + "&key=AIzaSyBoLGp9NmYUrAJj2AcQf6G4eelnfwX6R6I") 
+
+    srcLat = urlSRC.json()["results"]
+    
+    srcCoords = getLongLat(srcLat)
+    src_lat = srcCoords[0]
+    src_long = srcCoords[1]
+    
+    destLat = urlDEST.json()["results"]
+    
+    destCoords = getLongLat(destLat)
+    dest_lat = destCoords[0]
+    dest_long = destCoords[1]
+
+    distance = find_distance(src_long,src_lat,dest_long,dest_lat)
+
+    #time =
+
     new_ride_orm = RideHistoryORM(
-        src = new_ride.source,
-        dest = new_ride.dest,
+        sourceLat = src_lat,
+        sourceLong = src_long,
+        destLat = dest_lat,
+        destLong = dest_long,
+        price = set_price(distance),
+        riders = 2, #how to set?
         time = datetime.datetime.now(),
-        did = new_ride.did,
-        rid = new_ride.rid,
-        status = stages.get(0)
+        distance = distance,
+        did = 0, #or null?
+        rid = rider.id,
+        status = 0, #init to 0 
+        dist_src = "far", #how to get src lat and long?
+        time_src = "long" #how to estimate time?
     )
 
     orm_session.add(new_ride_orm)
     orm_session.commit()
     ret = RideHistoryModel.from_orm(new_ride_orm)
-    ret.key = ret.id
+    # ret.key = ret.id
 
-    #check if success
+    #check if success?
 
     orm_session.close()
     
     return ret
 
 
-@app.get("rides/id")
-def getRouteByID(id: str):
+@app.get("/rides/id")
+def getRouteByID(id: int):
 
     s = orm_parent_session()
 
@@ -197,11 +256,70 @@ def getRouteByID(id: str):
     raise ValueError
 
 
-#not endpoint i think
-def get_driver(token: str):
 
-    s = orm_parent_session
-    for u in s.query(DriverORM).filter(DriverORM.token == token):
+@app.get("/driver/routes")
+def getDriverRoutes(token: str, latititude: float, longitude: float, seats: int):
+
+    s = orm_parent_session()
+    driver = get_driver(token)
+
+    routes = []
+
+    for r in s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (seats+1)).order_by(asc(RideHistoryORM.riders)).all(): #idk if <= is supported lol i couldn't find it in the documentation so 
+        routeFound = RideHistoryModel.from_orm(r)
+        routes.append(routeFound)
+        #calculate dist and time - update route
+
+    
+    s.close()
+ 
+    return routes
+
+@app.get("/driver/claim")
+def driverClaimRoute(id: int, userRouteID: int): #id:int was token:str
+    s = orm_parent_session()
+    driver = get_driver(id)
+
+    for r in s.query(RideHistoryORM).filter(RideHistoryORM.id == userRouteID):
+        s.query(RideHistoryORM).filter(RideHistoryORM.id == userRouteID).update({RideHistoryORM.status: 2})
+        s.query(RideHistoryORM).filter(RideHistoryORM.id == userRouteID).update({RideHistoryORM.did: id})
+        s.commit() #i had forgotten this oops
+        routeFound = RideHistoryModel.from_orm(r)
+
+    return routeFound
+
+@app.get("/rider/history")
+def getRiderInfo(id: int): #was token : str
+    s = orm_parent_session()
+    rider = get_rider(id)
+
+    rides = []
+
+    for r in s.query(RideHistoryORM).filter(RideHistoryORM.rid == rider.id).all():
+        rideFound = RideHistoryModel.from_orm(r)
+        rides.append(rideFound)
+
+    return rides
+
+@app.get("/driver/history")
+def getDriverInfo(id:int): #was token : str
+    s = orm_parent_session()
+    driver = get_driver(id)
+
+    rides = []
+
+    for r in s.query(RideHistoryORM).filter(RideHistoryORM.did == id).all():
+        rideFound = RideHistoryModel.from_orm(r)
+        rides.append(rideFound)
+
+    return rides
+
+
+
+def get_driver(id: int): #id:int was token:str
+
+    s = orm_parent_session()
+    for u in s.query(DriverORM).filter(DriverORM.id == id):
         driver = DriverModel.from_orm(u)
         s.close()
         return driver
@@ -210,46 +328,126 @@ def get_driver(token: str):
     raise ValueError("No driver found :(")
     
 
-    pass
+def get_rider(id: int): #id:int was token:str
+    s = orm_parent_session()
 
-@app.get("driver/routes")
-def getDriverRoutes(token: str, latititude: str, longitude: str, seats: int):
+    for u in s.query(RiderORM).filter(RiderORM.id == id):
+        rider = RiderModel.from_orm(u)
+        s.close()
+        return rider
 
-    s = orm_parent_session
-    driver = get_driver(token)
-
-    routes = []
-
-    for r in s.query(RideHistoryORM).filter(RideHistoryORM.status == 1).order_by(asc(RideHistoryORM.riders)).all():
-        routeFound = RideHistoryORM.from_orm(r)
-        routes.append(routeFound)
-        #calculate dist and time - adjust route?
-        #build route object?
-
-    
     s.close()
- 
-    return routes
-
-def driverClaimRoute(token: str, userRouteID: int):
-    s = orm_parent_session
-    driver = get_driver(token)
-
-    for r in s.query(RideHistoryORM).filter(RideHistoryORM.id == userRouteID):
-        routeFound = RideHistoryORM.from_orm(r)
-        #setStatus to 2
-        #give did the driver id
-
-    pass
-
-
-def getRiderRides(token: str):
-    s = orm_parent_session
-    pass
-
-def getDriverRides(token: str):
-    s = orm_parent_session
-    pass
+    raise ValueError("No driver found :(")
 
 
 
+
+#driver/rider add:
+
+
+@app.post("/rider/add")
+def add_rider(new_user: RiderModel):
+    """Adds a new row to rider table."""
+    orm_session = orm_parent_session()
+    # Generate a salt, then hash the password.
+    # Don't verify password strength here - do that on frontend.
+
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(bytes(new_user.password, 'utf-8'), salt)
+    token = gen_token()
+
+    new_user_ORM = RiderORM(
+        fname=new_user.fname,
+        lname=new_user.lname,
+        salt=salt,
+        hashed=hashed,
+        email=new_user.email,
+        pic=new_user.pic,
+        phoneNumber=new_user.phoneNumber,
+        ada = new_user.ada
+    )
+
+    try:
+        orm_session.add(new_user_ORM)
+        orm_session.commit()
+    except Exception as e:
+        # User failed to add. Almost certainly an IntegrityError.
+        orm_session.close()
+        raise HTTPException(
+            400, "User already exists! Detailed message: " + str(e))
+
+    new_token_ORM = TokenORM(
+        val=token,
+        rid=new_user_ORM.id
+    )
+
+    orm_session.add(new_token_ORM)
+    orm_session.commit()
+
+    ret = NewRiderReturn(
+        user=RiderModel.from_orm(new_user_ORM),
+        token=TokenModel.from_orm(new_token_ORM)
+    )
+
+    orm_session.commit()
+    orm_session.close()
+    return ret
+
+
+
+
+@app.post("/driver/add")
+def add_driver(new_user: DriverModel):
+    """Adds a new row to driver table."""
+    orm_session = orm_parent_session()
+    # Generate a salt, then hash the password.
+    # Don't verify password strength here - do that on frontend.
+
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(bytes(new_user.password, 'utf-8'), salt)
+    token = gen_token()
+
+    new_user_ORM = DriverORM(
+        fname=new_user.fname,
+        lname=new_user.lname,
+        salt=salt,
+        hashed=hashed,
+        email=new_user.email,
+        pic=new_user.pic,
+        phoneNumber=new_user.phoneNumber,
+        licensePlate = new_user.licensePlate,
+        carMake = new_user.carMake,
+        carColor = new_user.carColor,
+        driverLicence = new_user.driverLicence,
+        numSeats = new_user.numSeats,
+        ada = new_user.ada,
+        active = 0
+    )
+
+    try:
+        orm_session.add(new_user_ORM)
+        orm_session.commit()
+    except Exception as e:
+        # User failed to add. Almost certainly an IntegrityError.
+        orm_session.close()
+        raise HTTPException(
+            400, "User already exists! Detailed message: " + str(e))
+
+    new_token_ORM = TokenORM(
+        val=token,
+        rid=new_user_ORM.id
+    )
+
+    orm_session.add(new_token_ORM)
+    orm_session.commit()
+
+
+
+    ret = NewDriverReturn(
+        user=DriverModel.from_orm(new_user_ORM),
+        token=TokenModel.from_orm(new_token_ORM)
+    )
+
+    orm_session.commit()
+    orm_session.close()
+    return ret

@@ -1,5 +1,5 @@
 from typing import List, Optional
-from sqlalchemy import Column, Integer, String, Date, ForeignKey, MetaData, DateTime, Date, Boolean
+from sqlalchemy import Column, Integer, String, Date, ForeignKey, MetaData, DateTime, Date
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.declarative import declarative_base
@@ -19,7 +19,7 @@ class DriverORM(Base):
     fname = Column(String(32), nullable=False)
     lname = Column(String(32), nullable=False)
     email = Column(String(32), nullable=False, unique=True)
-    pic = Column(String(128))
+    pic = Column(String(128), nullable=True)
     salt = Column(String(32), nullable=False)
     hashed = Column(String(32), nullable=False)   
     phoneNumber = Column(Integer, nullable=False)
@@ -28,38 +28,35 @@ class DriverORM(Base):
     carColor = Column(String(32), nullable=False)
     driverLicence = Column(String(32), nullable=False)
     numSeats = Column(Integer, nullable=False)
-    ada = Column(Boolean, nullable = False) 
-    active = Column(Boolean, nullable = False)
+    ada = Column(Integer, nullable = False) 
+    active = Column(Integer, nullable = False)
 
-    ride_id = Column(String(32), ForeignKey("rideHistory.id"))
 
-    rides = relationship("RideHistoryORM") #include ride id, user id, driver id, source, dest, price 
-    tokens = relationship("TokenORM")
 
 
 
 
 
 class DriverModel(BaseModel):
-    class config:
-        orm_mode = True
-
     
     id: Optional[int]
     fname: Optional[str]
     lname: Optional[str]
-    password: Optional[str]
     email: Optional[str]
+    password: Optional[str]
     pic: Optional[str]
     phoneNumber: Optional[int]
     licensePlate: Optional[str]
     carMake: Optional[str]
-    carModel: Optional[str]
+    carColor: Optional[str]
     driverLicence: Optional[str]
     numSeats: Optional[int]
-    ada: Optional[bool]
-    active: Optional[bool]
+    ada: Optional[int]
+    active: Optional[int]
+    token: Optional[str]
 
+    class Config:
+        orm_mode = True
 
 
 
@@ -73,26 +70,18 @@ class RiderORM(Base):
     fname = Column(String(32), nullable=False)
     lname = Column(String(32), nullable=False)
     email = Column(String(32), nullable=False, unique=True)
-    pic = Column(String(128))
+    pic = Column(String(128), nullable=True)
     salt = Column(String(32), nullable=False)
     hashed = Column(String(32), nullable=False)
-    creditCard = Column(String(32), nullable=False) #making it a part of rider instead of relation cuz it easier tbh - realistically this makes more sense as a table of cards, but ¯\_(ツ)_/¯ 
     phoneNumber = Column(Integer, nullable=False)
-    ada = Column(Boolean, nullable = False)
-
-
-    ride_id = Column(Integer, ForeignKey("rideHistory.id"))
+    ada = Column(Integer, nullable=True)
 
     favSpots = relationship("FavSpotsORM") 
-    tokens = relationship("TokenORM")
     cards = relationship("CardsORM") 
-    rides = relationship("RideHistoryORM")
+
 
 
 class RiderModel(BaseModel):
-    class config:
-        orm_mode = True
-
 
     id: Optional[int]
     fname: Optional[str]
@@ -101,11 +90,17 @@ class RiderModel(BaseModel):
     email: Optional[str]
     creditCard: Optional[str]
     phoneNumber: Optional[int]
-    ada: Optional[bool]
+    ada: Optional[int]
+    password: Optional[str]
+    token: Optional[str]
+
+    class Config:
+        orm_mode = True
 
 
 class FavSpotsORM(Base):
     __tablename__ = "favspots"
+    metadata = metadata
     id = Column(Integer, nullable=False, primary_key=True)
     name = Column(String(32), nullable=False)
     location = Column(String(32), nullable=False)
@@ -115,33 +110,38 @@ class FavSpotsORM(Base):
 
 
 class FavSpotsModel(BaseModel):
-    class config:
-        orm_mode = True
 
     id: Optional[int]
     name: Optional[str]
     location: Optional[str]
 
+    class Config:
+        orm_mode = True
+
 class CardsORM(Base):
     __tablename__ = "cards"
+    metadata = metadata
     id = Column(Integer, nullable=False, primary_key=True)
     name = Column(String(32), nullable=False)
     number = Column(Integer, nullable=False)
     rid = Column(Integer, ForeignKey("rider.id"))
 
-class CardsModel(BaseModel):
-    class config:
-        orm_mode = True
-    
+class CardsModel(BaseModel):    
     id: Optional[int]
     name: Optional[str]
     number: Optional[str]
 
+    class Config:
+        orm_mode = True
+
 class RideHistoryORM(Base):
     __tablename__ = "rideHistory"
+    metadata = metadata
     id = Column(Integer, nullable=False, primary_key=True)
-    source = Column(String(256), nullable=False)
-    dest = Column(String(256), nullable=False)
+    sourceLat = Column(String(256), nullable=False)
+    sourceLong = Column(String(256), nullable=False)
+    destLat = Column(String(256), nullable=False)
+    destLong = Column(String(256), nullable=False)
     price = Column(String(32), nullable=False)
     riders = Column(Integer, nullable=False)
     time = Column(DateTime)
@@ -153,19 +153,25 @@ class RideHistoryORM(Base):
     time_src = Column(String(32), nullable=False)
 
 class RideHistoryModel(BaseModel):
-    class config:
-        orm_mode = True
-    
+        
     id: Optional[int]
-    source: Optional[str]
-    dest: Optional[str]
+    sourceLat: Optional[str]
+    sourceLong: Optional[str]
+    destLat: Optional[str]
+    destLong: Optional[str]
     price: Optional[str]
+    riders: Optional[str]
+    distance: Optional[str]
     time: Optional[datetime.datetime]
-    did: Optional[int]
     rid: Optional[int]
+    did: Optional[int]
     status: Optional[str]
+    dist_src: Optional[str]
+    time_src: Optional[str]
     token: Optional[str]
     
+    class Config:
+        orm_mode = True
     
 
 
@@ -182,22 +188,33 @@ class TokenORM(Base):
     did = Column(Integer, ForeignKey("driver.id"), nullable=True)
 
 class TokenModel(BaseModel):
-    class Config:
-        orm_mode = True
     val: str
 
+    class Config:
+        orm_mode = True
+    
 
 
 
 class NewRiderReturn(BaseModel):
+
     user: RiderModel
     token: TokenModel
 
+    class Config:
+        orm_mode = True
 
-class NewDrivereturn(BaseModel):
+
+
+
+class NewDriverReturn(BaseModel):
     user: DriverModel
     token: TokenModel
 
+    class Config:
+        orm_mode = True
+
+    
 
 class LoginData(BaseModel):
     email: str
@@ -208,12 +225,3 @@ class AuthIntModel(BaseModel):
     val: int
     token: str
 
-
-class NewDriverReturn(BaseModel):
-    user: DriverModel
-    token: TokenModel
-
-
-class NewRiderReturn(BaseModel):
-    user: RiderModel
-    token: TokenModel
