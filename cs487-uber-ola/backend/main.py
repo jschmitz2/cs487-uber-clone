@@ -284,7 +284,6 @@ def getRouteByID(id: int):
     raise ValueError
 
 
-<<<<<<< HEAD
 @app.post("/rides/id/complete")
 def completeRide(id:int):
     s = orm_parent_session()
@@ -316,8 +315,6 @@ def requestRide(id:int):
 
 
 
-=======
->>>>>>> f32a35dc81e5d10afb216b5fd49336d6878af7a5
 @app.get("/driver/routes")
 def getDriverRoutes(token: int, latititude: float, longitude: float, seats: int):
 
