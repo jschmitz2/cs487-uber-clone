@@ -219,13 +219,12 @@ def set_price(dist): #uber does $0.85 per mile plus $0.30 per minute
 
 
 @app.post("/rides/add")
-def submit_route(src: str, dest: str, token: str):
+def submit_route(src: str, dest: str, token: str, riders: int):
     orm_session = orm_parent_session()
     rider = get_rider(token)
-    
 
-    urlSRC = requests.get("https://maps.googleapis.com/maps/api/geocode/json?address=" + src.replace(" ", "+") + "&key=" +key.key) 
-    urlDEST = requests.get("https://maps.googleapis.com/maps/api/geocode/json?address=" + dest.replace(" ", "+") + "&key=" +key.key) 
+    urlSRC = requests.get("https://maps.googleapis.com/maps/api/geocode/json", params={"address": src, "key": key.key})
+    urlDEST = requests.get("https://maps.googleapis.com/maps/api/geocode/json", params={"address": dest, "key": key.key})
 
     srcLat = urlSRC.json()["results"]
     
@@ -239,18 +238,18 @@ def submit_route(src: str, dest: str, token: str):
     dest_lat = destCoords[1]
     dest_long = destCoords[0]
 
-    distance = googleMapsTimeDist(src_long,src_lat,dest_long,dest_lat)
+    distance = googleMapsTimeDist(src_long, src_lat, dest_long, dest_lat)
 
-    #time =
+    price = (float(distance[0].split()[0]) * 1 + float(distance[1].split()[0]) * 0.30 + 2.00) * math.log(riders + math.e)
 
     new_ride_orm = RideHistoryORM(
         sourceLat = src_lat,
         sourceLong = src_long,
         destLat = dest_lat,
         destLong = dest_long,
-        price = 10,
-        riders = 2, #how to set?
-        time = datetime.datetime.now(), #distance[0] is time of trip
+        price = price,
+        riders = riders, # how to set?
+        time = distance[0], #distance[0] is time of trip
         distance = distance[1],
         did = 0, #or null?
         rid = rider.id,

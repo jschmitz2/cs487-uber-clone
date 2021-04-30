@@ -52,7 +52,7 @@ class Home extends React.Component {
       userRoutePrice: null,
       userRouteDist: null,
       card: "new",
-      
+      ride: null,
       enterSrc: "enter",
       enterDest: "enter",
       user: null
@@ -76,28 +76,11 @@ class Home extends React.Component {
   }
 
   getRouteInfo() {
-    /* API ENDPOINT
-     *
-     * Arguments:
-     * src: String representing start point.
-     * dest: String representing end point.
-     * token: String. The user's token.
-     * numRiders: Int. The number of riders.
-     *
-     * Expected behavior:
-     * Create a new route ID with the provided information, tied to the user.
-     * Return a built "route" object.
-     */
-    // fetch() and get data
-    // .then((res) => res.json)
-    // .then((json) => {
-    this.setState({
-      userRouted: true,
-      userRouteId: Math.floor(Math.random() * 100),
-      userRoutePrice: Math.random() * 40,
-      userRouteDist: Math.random() * 20,
-    });
-    console.log(this.state);
+    fetch("http://" + window.location.hostname + ":8000/rides/add?token=" + this.token + "&src=" + this.state.src + "&dest=" + this.state.dest + "&riders=" + this.state.numRiders, {
+      "method": "POST"
+    })
+    .then((res) => res.json())
+    .then((json) => this.setState({ ride: json }));
   }
 
   renderMap() {
@@ -114,6 +97,24 @@ class Home extends React.Component {
           height="700px"
         />
       );
+    }
+
+    if(this.state.ride != null) {
+      if (this.state.routed == 1) {
+        this.setState({ routed: 2 });
+        this.map = (
+          <iframe
+            src={
+              "https://www.google.com/maps/embed/v1/directions?key=" +
+              keys.gmaps +
+              "&origin=" + this.state.ride.sourceLat + "," + this.state.ride.sourceLong + 
+              "&destination=" + this.state.ride.destLat + "," + this.state.ride.destLong
+            }
+            width="500px"
+            height="700px"
+          />
+        );
+      }
     }
 
     if (this.state.src != "" && this.state.dst != "") {
@@ -138,12 +139,13 @@ class Home extends React.Component {
   }
 
   getUserRouteInfo() {
-    if (this.state.userRouted) {
+    if (this.state.ride != null) {
       return (
         <RouteInfoDiv>
           <h3>Route Info</h3>
-          <p>Price: ${this.state.userRoutePrice.toFixed(2)}</p>
-          <p>Distance: {this.state.userRouteDist.toFixed(2)}</p>
+          <p>Price: ${this.state.ride.price.toFixed(2)}</p>
+          <p>Distance: {this.state.ride.distance}</p>
+          <p>Time: {this.state.ride.time}</p>
         </RouteInfoDiv>
       );
     }
@@ -184,7 +186,6 @@ class Home extends React.Component {
     if(this.state.user == null) {
       return null;
     }
-    console.log(this.state.user)
     return (
       <PageDiv>
         <ContentDiv>

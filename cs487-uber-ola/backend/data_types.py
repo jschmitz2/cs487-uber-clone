@@ -1,5 +1,5 @@
 from typing import List, Optional
-from sqlalchemy import Column, Integer, String, Date, ForeignKey, MetaData, DateTime, Date
+from sqlalchemy import Column, Integer, String, Date, ForeignKey, MetaData, DateTime, Date, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.declarative import declarative_base
@@ -140,9 +140,9 @@ class RideHistoryORM(Base):
     sourceLong = Column(String(256), nullable=False)
     destLat = Column(String(256), nullable=False)
     destLong = Column(String(256), nullable=False)
-    price = Column(String(32), nullable=False)
+    price = Column(Float, nullable=False)
     riders = Column(Integer, nullable=False)
-    time = Column(DateTime)
+    time = Column(String(32))
     distance = Column(String(32), nullable=False)
     rid = Column(Integer, ForeignKey("rider.id")) 
     did = Column(Integer, ForeignKey("driver.id")) 
@@ -157,10 +157,10 @@ class RideHistoryModel(BaseModel):
     sourceLong: Optional[str]
     destLat: Optional[str]
     destLong: Optional[str]
-    price: Optional[str]
+    price: Optional[float]
     riders: Optional[str]
     distance: Optional[str]
-    time: Optional[datetime.datetime]
+    time: Optional[str]
     rid: Optional[int]
     did: Optional[int]
     status: Optional[str]
