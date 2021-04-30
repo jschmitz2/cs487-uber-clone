@@ -34,11 +34,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class HelloResponse(BaseModel):
-    name: str
-    message: str
-
-
 engine = create_engine("sqlite:///test_db.db")
 orm_parent_session = sessionmaker(bind=engine)
 metadata.create_all(engine)
@@ -289,6 +284,7 @@ def getRouteByID(id: int):
     raise ValueError
 
 
+<<<<<<< HEAD
 @app.post("/rides/id/complete")
 def completeRide(id:int):
     s = orm_parent_session()
@@ -320,6 +316,8 @@ def requestRide(id:int):
 
 
 
+=======
+>>>>>>> f32a35dc81e5d10afb216b5fd49336d6878af7a5
 @app.get("/driver/routes")
 def getDriverRoutes(token: int, latititude: float, longitude: float, seats: int):
 
@@ -410,11 +408,41 @@ def get_rider(id: int): #id:int was token:str
     s.close()
     raise ValueError("No driver found :(")
 
+@app.get("/rider/get")
+def get_rider(token: str): #id:int was token:str
+
+    rid = get_rid_token(token)["rid"]
+    if(rid == -1):
+        raise HTTPException(422, "User not found!")
+
+    s = orm_parent_session()
+    try:
+        rider = RiderModel.from_orm(s.query(RiderORM).filter(RiderORM.id == rid).one())
+        s.close()
+        return rider
+    except NoResultFound:
+        raise HTTPException(422, "No rider found!")
 
 
+def get_rid_token(token: str):
+    s = orm_parent_session()
+    try:
+        t = s.query(TokenORM).filter(TokenORM.val == token).one()
+        s.close()
+        return {"result": token, "rid": t.rid}
+    except NoResultFound:
+        s.close()
+        return {"result": 0, "rid": -1}
 
-#driver/rider add:
-
+def get_did_token(token: str):
+    s = orm_parent_session()
+    try:
+        t = s.query(TokenORM).filter(TokenORM.val == token).one()
+        s.close()
+        return {"result": token, "did": t.did}
+    except NoResultFound:
+        s.close()
+        return {"result": 0, "did": -1}
 
 @app.post("/rider/add")
 def add_rider(new_user: RiderModel):
@@ -464,9 +492,6 @@ def add_rider(new_user: RiderModel):
     orm_session.close()
     return ret
 
-
-
-
 @app.post("/driver/add")
 def add_driver(new_user: DriverModel):
     """Adds a new row to driver table."""
@@ -506,7 +531,7 @@ def add_driver(new_user: DriverModel):
 
     new_token_ORM = TokenORM(
         val=token,
-        rid=new_user_ORM.id
+        did=new_user_ORM.id
     )
 
     orm_session.add(new_token_ORM)
