@@ -105,8 +105,8 @@ class RiderModel(BaseModel):
     password: Optional[str]
     token: Optional[str]
 
-    favSpots: List[FavSpotsModel]
-    cards: List[CardsModel]
+    favSpots: Optional[List[FavSpotsModel]]
+    cards: Optional[List[CardsModel]]
 
     class Config:
         orm_mode = True
