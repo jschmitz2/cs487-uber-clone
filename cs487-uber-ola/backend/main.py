@@ -213,12 +213,12 @@ def googleMapsTimeDist(lo1,la1,lo2,la2): #cuz i return time then dist
 
 
 def set_price(dist): #uber does $0.85 per mile plus $0.30 per minute
-    priceDist = float(dist[1].replace("mi", "").replace(",", ""))*(.85) 
+    priceDist = float(dist[1].split()[0])*(.85) 
     if('hours' in dist[0]):
-        list = dist[0].split(" ")
+        list = dist[0].split()
         priceTime = float(list[0])*60*.3 + float(list[2])*.3
     else:
-        priceTime = float(dist[0].replace("mins", ""))*(0.30)
+        priceTime = float(dist[0].split()[0])*(0.30)
 
     price = priceDist + priceTime
     return str(round(price, 2))
@@ -306,18 +306,28 @@ def completeRide(id:int):
     raise ValueError
 
 
-@app.post("/rides/request")
-def requestRide(id:int):
-    s = orm_parent_session()
+@app.post("/rides/confirm")
+def requestRide(id: int, card_id: int, token: str):
 
-    for r in s.query(RideHistoryORM).filter(RideHistoryORM.id == id):
-        s.query(RideHistoryORM).filter(RideHistoryORM.id == id).update({RideHistoryORM.status: 1})
-        s.commit()
-        route = RideHistoryModel.from_orm(r)
-        s.close()
-        return route
+    rid = get_rid_token(token)["rid"]
+    if(rid == -1):
+        raise HTTPException(422, "User not found!")
+    
+    s = orm_parent_session()
+    try:
+        r = s.query(RideHistoryORM).filter(RideHistoryORM.id == id).one()
+    except Exception as e:
+        raise HTTPException(450, "Error! " + e)
+    
+    if r.rid != rid:
+        raise HTTPException(430, "Unauthenticated!")
+
+    r.status = 1 
+    r.card_id = card_id 
+    s.commit()
+    route = RideHistoryModel.from_orm(r)
     s.close()
-    raise ValueError
+    return route
 
 
 

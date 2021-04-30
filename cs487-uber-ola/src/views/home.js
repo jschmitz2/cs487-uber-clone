@@ -51,17 +51,20 @@ class Home extends React.Component {
       userRouteId: null,
       userRoutePrice: null,
       userRouteDist: null,
-      card: "new",
+      card: -1,
       ride: null,
       enterSrc: "enter",
       enterDest: "enter",
-      user: null
+      user: null,
+      numRiders: 1
+
     };
     this.map = null;
     this.token = Cookies.get("token");
     this.renderMap = this.renderMap.bind(this);
     this.getRouteInfo = this.getRouteInfo.bind(this);
     this.addNewCard = this.addNewCard.bind(this);
+    this.claimRoute = this.claimRoute.bind(this);
   }
 
   componentDidMount() {
@@ -80,7 +83,16 @@ class Home extends React.Component {
       "method": "POST"
     })
     .then((res) => res.json())
-    .then((json) => this.setState({ ride: json }));
+    .then((json) => this.setState({ ride: json, routed: 1}));
+  }
+
+  claimRoute() {
+    fetch("http://" + window.location.hostname + ":8000/rides/confirm?token=" + this.token + "&id=" + this.state.ride.id + "&card_id=" + this.state.card, {
+      "method": "POST"
+    })
+    .then((res) => res.json())
+    .then((json) => this.setState({ ride: json, routed: 1}));
+
   }
 
   renderMap() {
@@ -97,6 +109,7 @@ class Home extends React.Component {
           height="700px"
         />
       );
+      this.setState({ routed: 0 });
     }
 
     if(this.state.ride != null) {
@@ -116,30 +129,11 @@ class Home extends React.Component {
         );
       }
     }
-
-    if (this.state.src != "" && this.state.dst != "") {
-      if (this.state.routed == 1) {
-        this.setState({ routed: 2 });
-        this.map = (
-          <iframe
-            src={
-              "https://www.google.com/maps/embed/v1/directions?key=" +
-              keys.gmaps +
-              "&origin=" +
-              this.state.src +
-              "&destination=" +
-              this.state.dest
-            }
-            width="500px"
-            height="700px"
-          />
-        );
-      }
-    }
   }
 
   getUserRouteInfo() {
     if (this.state.ride != null) {
+      console.log(this.state.ride);
       return (
         <RouteInfoDiv>
           <h3>Route Info</h3>
@@ -317,11 +311,11 @@ class Home extends React.Component {
                       Card ending in {x.number.substr(-4)}
                     </option>
                   ))}
-                  <option value="new">Add New</option>
+                  <option value={-1}>Add New</option>
                 </Form.Control>
               </Form.Group>
               <Form.Group
-                hidden={this.state.card != "new"}
+                hidden={this.state.card != -1}
                 as="row"
                 controlId="formNewCard"
               >
@@ -353,7 +347,6 @@ class Home extends React.Component {
                   type="submit"
                   onClick={(event) => {
                     event.preventDefault();
-                    this.setState({ routed: 1 });
                     this.getRouteInfo();
                   }}
                 >
@@ -362,11 +355,12 @@ class Home extends React.Component {
                 <Button
                   variant="primary"
                   type="submit"
-                  disabled={!this.state.userRouted}
+                  disabled={this.state.ride == null || this.state.card == -1}
                   onClick={(event) => {
                     event.preventDefault();
+                    this.claimRoute();
                     document.location.replace(
-                      "/user/route?userRouteId=" + this.state.userRouteId
+                      "/user/route?userRouteId=" + this.state.ride.id
                     );
                   }}
                 >

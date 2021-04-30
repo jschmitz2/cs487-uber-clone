@@ -145,7 +145,8 @@ class RideHistoryORM(Base):
     time = Column(String(32))
     distance = Column(String(32), nullable=False)
     rid = Column(Integer, ForeignKey("rider.id")) 
-    did = Column(Integer, ForeignKey("driver.id")) 
+    did = Column(Integer, ForeignKey("driver.id"))
+    card_id = Column(Integer, ForeignKey("cards.id"))
     status = Column(Integer, nullable=False)
     dist_src = Column(String(32), nullable=False)
     time_src = Column(String(32), nullable=False)
@@ -167,6 +168,7 @@ class RideHistoryModel(BaseModel):
     dist_src: Optional[str]
     time_src: Optional[str]
     token: Optional[str]
+    card_id: Optional[int]
     
     class Config:
         orm_mode = True
