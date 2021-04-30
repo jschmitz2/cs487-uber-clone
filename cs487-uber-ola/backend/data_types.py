@@ -164,7 +164,7 @@ class RideHistoryModel(BaseModel):
     time: Optional[str]
     rid: Optional[int]
     did: Optional[int]
-    status: Optional[str]
+    status: Optional[int]
     dist_src: Optional[str]
     time_src: Optional[str]
     token: Optional[str]

@@ -20,6 +20,7 @@ class Login extends React.Component {
   processLogin(json, mode) {
     Cookies.set("token", json.token.val, { expires: 15 });
     Cookies.set("fname", json.user.fname, { expires: 15 });
+    Cookies.set("userType", mode)
     if (mode == "driver") {
       document.location.replace("/drive");
     } else {

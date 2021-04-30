@@ -95,23 +95,30 @@ class UserRoute extends React.Component {
         <ProgressBar
           striped
           variant={stage >= 1 ? "success" : "info"}
-          now={20}
+          now={25}
           key={1}
           label="Route Created"
         />
         <ProgressBar
           striped
           variant={stage >= 2 ? "success" : "info"}
-          now={stage >= 1 ? 50 : 0}
+          now={stage >= 1 ? 25 : 0}
           key={1}
           label="Finding Driver"
         />
         <ProgressBar
           striped
           variant={stage >= 3 ? "success" : "info"}
-          now={stage >= 2 ? 50 : 0}
+          now={stage >= 2 ? 25 : 0}
           key={1}
           label="Driver Arriving"
+        />
+        <ProgressBar
+          striped
+          variant={stage >= 4 ? "success" : "info"}
+          now={stage >= 2 ? 25 : 0}
+          key={1}
+          label="Ride Completed"
         />
       </ProgressBar>
     );
@@ -119,10 +126,12 @@ class UserRoute extends React.Component {
 
   render() {
     this.renderMap();
-
+    console.log(this.state.route);
     if (this.state.route == null) {
       return null;
     }
+
+    let rideCompletedMessage = (this.state.route.status == 4) ? <div><br/><h3>Ride completed!</h3> <p>Your account has been charged for ${this.state.route.price.toFixed(2)}. </p><p>Thanks for choosing TotallyNotUber!</p></div>  : null
     return (
       <PageDiv>
         <h1>Route Page</h1>
@@ -131,7 +140,8 @@ class UserRoute extends React.Component {
             <h2>Your Route</h2>
             <p>Price: {this.state.route.price.toFixed(2)}</p>
             <p>Distance: {this.state.route.distance}</p>
-            {this.progressBar(this.state.route.stage)}
+            {this.progressBar(this.state.route.status)}
+            {rideCompletedMessage}
           </Pane>
           <Pane>
             <h2>Pickup Location</h2>
