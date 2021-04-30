@@ -562,3 +562,36 @@ def add_driver(new_user: DriverModel):
     orm_session.commit()
     orm_session.close()
     return ret
+
+
+@app.post("/rider/fav_loc/add")
+def add_fav_loc(token: str, newLoc: str):
+    rid = get_rid_token(token)["rid"]
+    if(rid == -1):
+        raise HTTPException(422, "User not found!")
+    
+    s = orm_parent_session()
+    f = FavSpotsORM(location=newLoc, rid=rid)
+    s.add(f)
+    s.commit()
+    s.close()
+    return get_rider(token)
+
+@app.post("/rider/cards/add")
+def add_fav_loc(newCard: CardsModel):
+    rid = get_rid_token(newCard.token)["rid"]
+    if(rid == -1):
+        raise HTTPException(422, "User not found!")
+    
+    s = orm_parent_session()
+    c = CardsORM(
+        number=newCard.number,
+        expiration=newCard.expiration,
+        cvc=newCard.cvc,
+        rid=rid)
+
+    s.add(c)
+    s.commit()
+    s.close()
+
+    return get_rider(newCard.token)
