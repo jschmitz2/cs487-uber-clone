@@ -45,8 +45,6 @@ class RideRequest extends React.Component {
   }
 
   render() {
-    console.log(this);
-    console.log(this.borderFunc());
     return (
       <ReqContainer style={{border: ((this.borderFunc()) ? "solid 1px black" : "")}}>
         <HeaderFlex>
@@ -59,7 +57,7 @@ class RideRequest extends React.Component {
         </RowFlex>
         <RowFlex>
           <p>Distance: </p>
-          <p>{this.req.dist_trip}</p>
+          <p>{this.req.distance}</p>
         </RowFlex>
         <RowFlex>
           <p>Time: </p>
@@ -72,10 +70,6 @@ class RideRequest extends React.Component {
         <RowFlex>
           <p>Time to Start: </p>
           <p>{this.req.time_src}</p>
-        </RowFlex>
-        <RowFlex>
-          <p>Hourly Pay: </p>
-          <p>{(this.req.price / (this.req.time_src + this.req.time_trip))}$/hr</p>
         </RowFlex>
         <RowFlex>
           <RequestButton onClick={this.claimFunc}>Drive</RequestButton>

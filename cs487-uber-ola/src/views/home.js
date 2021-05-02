@@ -87,7 +87,7 @@ class Home extends React.Component {
   }
 
   claimRoute() {
-    fetch("http://" + window.location.hostname + ":8000/rides/confirm?token=" + this.token + "&id=" + this.state.ride.id + "&card_id=" + this.state.card, {
+    fetch("http://" + window.location.hostname + ":8000/rides/confirm?token=" + this.token + "&id=" + this.state.ride.id + "&card_id=" + this.state.card + "&newStatus=1", {
       "method": "POST"
     })
     .then((res) => res.json())

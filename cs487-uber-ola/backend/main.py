@@ -195,7 +195,6 @@ def googleMapsTimeDist(lo1,la1,lo2,la2): #cuz i return time then dist
     url = "https://maps.googleapis.com/maps/api/directions/json?" + str(origin) + "&" + str(destination) +"&" + thekey
 
     googleReturn = requests.get(url)
-    print(url)
     src = googleReturn.json()["routes"]
     dict = src[0]
     legs = dict["legs"]
@@ -317,7 +316,7 @@ def requestRide(id: int, card_id: int, token: str):
     try:
         r = s.query(RideHistoryORM).filter(RideHistoryORM.id == id).one()
     except Exception as e:
-        raise HTTPException(450, "Error! " + e)
+        raise HTTPException(450, "Error! " + str(e))
     
     if r.rid != rid:
         raise HTTPException(430, "Unauthenticated!")
@@ -329,22 +328,15 @@ def requestRide(id: int, card_id: int, token: str):
     s.close()
     return route
 
-
-
-
-
 @app.get("/driver/routes")
 def getDriverRoutes(token: str, latititude: float, longitude: float):
 
-    s = orm_parent_session()
     did = get_did_token(token)["did"]
     if(did == -1):
         raise HTTPException(422, "User not found!")
 
+    s = orm_parent_session()
     seats = get_driver(token).numSeats
-
-
-    
 
     routes = []
 
@@ -360,28 +352,27 @@ def getDriverRoutes(token: str, latititude: float, longitude: float):
         s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (seats+1)).update({RideHistoryORM.dist_src: dist})
         s.commit()
 
-
-    
     s.close()
  
     return routes
 
-@app.get("/driver/claim")
-def driverClaimRoute(token:str, userRouteID: int):
-    s = orm_parent_session()
+@app.post("/driver/claim")
+def driverClaimRoute(token: str, userRouteId: int, newStatus: int):
     did = get_did_token(token)["did"]
     if(did == -1):
         raise HTTPException(422, "User not found!")
 
-    routeFound = ""
-
-    for r in s.query(RideHistoryORM).filter(RideHistoryORM.id == userRouteID):
-        s.query(RideHistoryORM).filter(RideHistoryORM.id == userRouteID).update({RideHistoryORM.status: 2})
-        s.query(RideHistoryORM).filter(RideHistoryORM.id == userRouteID).update({RideHistoryORM.did: did})
-        s.commit() #i had forgotten this oops
-        routeFound = RideHistoryModel.from_orm(r)
-
-    return routeFound
+    s = orm_parent_session()
+    try:
+        r = s.query(RideHistoryORM).filter(RideHistoryORM.id == userRouteId).one()
+    except Exception as e:
+        raise HTTPException(430, "Error! " + str(e))
+    
+    r.status = newStatus
+    r.did = did
+    s.commit()
+    ret = RideHistoryModel.from_orm(r)
+    return ret
 
 @app.get("/rider/history")
 def getRiderInfo(token:str): #was token : str
@@ -413,9 +404,6 @@ def getDriverInfo(token:str):
 
     return rides
 
-
-
-
 @app.get("/rider/get")
 def get_rider(token: str):
 
@@ -431,7 +419,6 @@ def get_rider(token: str):
     except NoResultFound:
         raise HTTPException(422, "No rider found!")
 
-
 def get_driver(token: str):
 
     did = get_did_token(token)["did"]
@@ -445,7 +432,6 @@ def get_driver(token: str):
         return driver
     except NoResultFound:
         raise HTTPException(422, "No rider found!")
-
 
 def get_rid_token(token: str):
     s = orm_parent_session()
@@ -570,7 +556,6 @@ def add_driver(new_user: DriverModel):
     orm_session.commit()
     orm_session.close()
     return ret
-
 
 @app.post("/rider/fav_loc/add")
 def add_fav_loc(token: str, newLoc: str):

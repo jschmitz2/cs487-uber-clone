@@ -38,7 +38,7 @@ class UserPage extends React.Component {
   }
   render() {
     let content = null;
-    if((Cookies.get("userType")) == "Driver") {
+    if((Cookies.get("userType")) == "driver") {
       content = <div>
         <p>Total rides driven: {Math.floor(Math.random() * 40)}.</p>
         <p>Total revenue: ${Math.floor(Math.random() * 800)}.</p>

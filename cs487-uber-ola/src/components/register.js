@@ -35,6 +35,7 @@ class Register extends React.Component {
     Cookies.set("token", json.token.val, { expires: 15 });
     Cookies.set("fname", json.user.fname, { expires: 15 });
     Cookies.set("userType", userType, { expires : 15 });
+
     document.location.replace((userType == "rider" ? "/ride" : "/drive"));
     return;
   }
