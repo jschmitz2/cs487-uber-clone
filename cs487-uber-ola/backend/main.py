@@ -629,4 +629,4 @@ def get_driver(token: str):
         return total
 
     except NoResultFound:
-        raise HTTPException(422, "No rider found!")
+        raise HTTPException(422, "No driver found!")
