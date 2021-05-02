@@ -263,8 +263,8 @@ def submit_route(src: str, dest: str, token: str, riders: int):
         did=0,  # or null?
         rid=rid,
         status=0,  # init to 0
-        dist_src="far",  # how to get src lat and long?
-        time_src="long"  # how to estimate time?
+        dist_src="",  # how to get src lat and long?
+        time_src=""  # how to estimate time?
     )
 
     orm_session.add(new_ride_orm)
@@ -345,18 +345,18 @@ def getDriverRoutes(token: str, latititude: float, longitude: float):
 
     # idk if <= is supported lol i couldn't find it in the documentation so
     for r in s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (seats+1)).order_by(desc(RideHistoryORM.timestamp)):
-        srcLat = r.sourceLat
-        srcLng = r.sourceLong
-        distTime = googleMapsTimeDist(srcLng, srcLat, longitude, latititude)
-        time = distTime[0]
-        dist = distTime[1]
+        if(r.time_src == ""):
+            srcLat = r.sourceLat
+            srcLng = r.sourceLong
+            distTime = googleMapsTimeDist(srcLng, srcLat, longitude, latititude)
+            time = distTime[0]
+            dist = distTime[1]
+            s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (
+                seats+1)).update({RideHistoryORM.time_src: time})
+            s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (
+                seats+1)).update({RideHistoryORM.dist_src: dist})
 
-        s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (
-            seats+1)).update({RideHistoryORM.time_src: time})
-        s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (
-            seats+1)).update({RideHistoryORM.dist_src: dist})
         s.commit()
-
         routeFound = RideHistoryModel.from_orm(r)
         routes.append(routeFound)
 
