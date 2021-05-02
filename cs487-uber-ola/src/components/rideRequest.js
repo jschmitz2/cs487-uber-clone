@@ -60,6 +60,10 @@ class RideRequest extends React.Component {
           <p>{this.req.distance}</p>
         </RowFlex>
         <RowFlex>
+          <p>Date and time requested: </p>
+          <p style={{whiteSpace: "nowrap"}}>{(new Date(this.req.timestamp)).toLocaleString()}</p>
+        </RowFlex>
+        <RowFlex>
           <p>Time: </p>
           <p>{this.req.time}</p>
         </RowFlex>

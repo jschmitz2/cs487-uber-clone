@@ -35,27 +35,111 @@ const ButtonDiv = styled.div`
 class UserPage extends React.Component {
   constructor(props) {
     super(props);
+    this.userType = Cookies.get("userType");
+    this.token = Cookies.get("token");
+    this.fname = Cookies.get("fname");
+    this.state = {
+      tripData: null,
+      driver: null,
+      rider: null,
+    };
   }
+
+  buildUserInfo(user, tripData) {
+    if (user == null) {
+      return null;
+    }
+    return (
+      <div>
+        <p>
+          Your name: {user.fname} {user.lname}.
+        </p>
+        <p>Your email: {user.email}</p>
+        <p>Your phone number: {user.email}</p>
+        <p>Total rides taken: {tripData.numTrips}.</p>
+        <p>Total spent: ${tripData.totalSpend}.</p>
+        <p>Average price: ${tripData.avgPrice.toFixed(2)}.</p>
+      </div>
+    );
+  }
+
+  buildDriverInfo(user, tripData) {
+    if (user == null) {
+      return null;
+    }
+
+    return (
+      <div>
+        <p>
+          Your name: {user.fname} {user.lname}.
+        </p>
+        <p>Your email: {user.email}</p>
+        <p>Your car's carrying capacity: {user.numSeats}</p>
+        <p>Your car: {user.carColor} {user.carMake}, with plate {user.licensePlate}.</p>
+        <p>Total rides : {tripData.numTrips}.</p>
+        <p>Total rides driven: {tripData.numTrips}.</p>
+        <p>Total earnings: ${tripData.totalSpend}.</p>
+        <p>Average income per ride: ${tripData.avgPrice.toFixed(2)}.</p>
+      </div>
+    );
+  }
+
+  componentDidMount() {
+    fetch(
+      "http://" +
+        window.location.hostname +
+        ":8000/summary?token=" +
+        this.token +
+        "&mode=" +
+        this.userType
+    )
+      .then((res) => res.json())
+      .then((json) => this.setState({ tripData: json }));
+
+    if (this.userType == "driver") {
+      fetch(
+        "http://" +
+          window.location.hostname +
+          ":8000/driver/get?token=" +
+          this.token
+      )
+        .then((res) => res.json())
+        .then((json) => this.setState({ driver: json }));
+    }
+
+    if (this.userType == "rider") {
+      fetch(
+        "http://" +
+          window.location.hostname +
+          ":8000/rider/get?token=" +
+          this.token
+      )
+        .then((res) => res.json())
+        .then((json) => this.setState({ rider: json }));
+    }
+  }
+
   render() {
     let content = null;
-    if((Cookies.get("userType")) == "driver") {
-      content = <div>
-        <p>Total rides driven: {Math.floor(Math.random() * 40)}.</p>
-        <p>Total revenue: ${Math.floor(Math.random() * 800)}.</p>
-      </div>
-    } else {
-      content = <div>
-      <p>Total rides taken: {Math.floor(Math.random() * 40)}.</p>
-      <p>Total money spent: ${Math.floor(Math.random() * 800)}.</p>
-    </div>
+    if (this.state.tripData == null) {
+      return null;
     }
     return (
       <PageDiv>
         <ContentDiv>
-            <h1>Your Account</h1>
-            <p>Your name is {Cookies.get("fname")}. You're a {Cookies.get("userType")}.</p>
-            {content}
-            <button onClick={() => {Cookies.remove("fname"); Cookies.remove("token"); Cookies.remove("userType"); document.location.replace("/landing")}}>Click here to log out</button>
+          <h1>Your Account</h1>
+          {this.buildDriverInfo(this.state.driver, this.state.tripData)}
+          {this.buildUserInfo(this.state.rider, this.state.tripData)}
+          <button
+            onClick={() => {
+              Cookies.remove("fname");
+              Cookies.remove("token");
+              Cookies.remove("userType");
+              document.location.replace("/landing");
+            }}
+          >
+            Click here to log out
+          </button>
         </ContentDiv>
       </PageDiv>
     );

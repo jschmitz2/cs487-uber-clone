@@ -124,6 +124,21 @@ class UserRoute extends React.Component {
     );
   }
 
+  renderDriverInfo(driver) {
+     if(driver == null) {
+       return <div>
+         <br/>
+         <p>No driver assigned yet! This page will update automatically.</p>
+       </div>
+     } else {
+       return <div>
+         <br/>
+         <h3>Driver assigned: {driver.fname}</h3>
+         <p>Look for a {driver.carColor} {driver.carMake}, with plate {driver.licensePlate}.</p>
+       </div>
+     }
+  }
+
   render() {
     this.renderMap();
     console.log(this.state.route);
@@ -141,6 +156,7 @@ class UserRoute extends React.Component {
             <p>Price: {this.state.route.price.toFixed(2)}</p>
             <p>Distance: {this.state.route.distance}</p>
             {this.progressBar(this.state.route.status)}
+            {this.renderDriverInfo(this.state.route.driver)}
             {rideCompletedMessage}
           </Pane>
           <Pane>

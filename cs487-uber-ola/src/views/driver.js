@@ -81,7 +81,7 @@ class Driver extends React.Component {
       );
     }
     this.updateRides = this.updateRides.bind(this);
-    this.updateFunc = window.setInterval(this.updateRides, 4000);
+    this.updateFunc = window.setInterval(this.updateRides, 1000);
     this.updateRides();
   }
 
@@ -193,8 +193,7 @@ class Driver extends React.Component {
     if (this.state.rides == null) {
       return null;
     }
-    let ridesSorted = this.sortRides(this.state.rides, this.state.sort);
-    let rideRequests = ridesSorted.map((x) => (
+    let rideRequests = this.state.rides.map((x) => (
       <RideRequest
         key={x.id}
         claimFunc={() => this.claimFunc(x, 2)}

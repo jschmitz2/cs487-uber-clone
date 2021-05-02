@@ -41,8 +41,15 @@ class Login extends React.Component {
           password: this.state.password,
         }),
       })
-        .then((res) => res.json())
-        .then((json) => this.processLogin(json, "driver"));
+      .then((res) => {
+        if(res.status == 200) {
+          return res.json();
+        } else {
+          console.log(res);
+          throw Error("Invalid login!");
+        }})
+        .then((json) => this.processLogin(json, "driver"))
+        .catch(() => alert("Invalid login!"));
     } else {
       fetch("http://" + window.location.hostname + ":8000/rider/login", {
         method: "POST",
@@ -51,8 +58,15 @@ class Login extends React.Component {
           password: this.state.password,
         }),
       })
-        .then((res) => res.json())
-        .then((json) => this.processLogin(json, "rider"));
+        .then((res) => {
+          if(res.status == 200) {
+            return res.json();
+          } else {
+            console.log(res);
+            throw Error("Invalid login!");
+          }})
+        .then((json) => this.processLogin(json, "rider"))
+        .catch(() => alert("Invalid login!"));
     }
   }
 

@@ -54,10 +54,6 @@ class DriverModel(BaseModel):
         orm_mode = True
 
 
-
-
-
-
 class RiderORM(Base): 
     __tablename__ = "rider"
     metadata = metadata
@@ -136,6 +132,7 @@ class RideHistoryORM(Base):
     __tablename__ = "rideHistory"
     metadata = metadata
     id = Column(Integer, nullable=False, primary_key=True)
+    timestamp = Column(DateTime)
     sourceLat = Column(String(256), nullable=False)
     sourceLong = Column(String(256), nullable=False)
     destLat = Column(String(256), nullable=False)
@@ -150,10 +147,12 @@ class RideHistoryORM(Base):
     status = Column(Integer, nullable=False)
     dist_src = Column(String(32), nullable=False)
     time_src = Column(String(32), nullable=False)
+    driver = relationship("DriverORM")
 
 class RideHistoryModel(BaseModel):
         
     id: Optional[int]
+    timestamp: Optional[datetime.datetime]
     sourceLat: Optional[str]
     sourceLong: Optional[str]
     destLat: Optional[str]
@@ -169,6 +168,7 @@ class RideHistoryModel(BaseModel):
     time_src: Optional[str]
     token: Optional[str]
     card_id: Optional[int]
+    driver: Optional[DriverModel]
     
     class Config:
         orm_mode = True

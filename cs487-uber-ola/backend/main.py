@@ -48,10 +48,10 @@ stages = {
 }
 
 
-
 def gen_token():
     tok = str(uuid.uuid4().hex)[8:] + str(uuid.uuid4().hex)[8:]
     return tok
+
 
 @app.get("/token/test")
 def get_uid_token(token: str):
@@ -66,57 +66,16 @@ def get_uid_token(token: str):
         return {"result": 0, "uid": -1}
 
 
-
 @app.post("/rider/login")
 def login_rider(user_creds: LoginData):
     """Adds a new row to user table."""
     orm_session = orm_parent_session()
-    # Generate a salt, then hash the password. 
-    # Don't verify password strength here - do that on frontend. 
+    # Generate a salt, then hash the password.
+    # Don't verify password strength here - do that on frontend.
 
     try:
-        user = orm_session.query(RiderORM).filter(RiderORM.email == user_creds.email).one()
-    except NoResultFound:
-        time.sleep(random.randrange(1,2))
-        orm_session.close()
-        raise HTTPException(400, "Email not found!")
-
-    hashed = bcrypt.hashpw(bytes(user_creds.password, 'utf-8'), user.salt)
-
-    if(hashed != user.hashed):
-        orm_session.close()
-        raise HTTPException(400, "Email not found!")
-
-    token = gen_token()
-
-    new_token_ORM = TokenORM(
-        val = token,
-        rid = user.id #this will be riderID
-    )
-
-    orm_session.add(new_token_ORM)
-    orm_session.commit()
-
-    # DEBUG: Add user to random number between 1 and 10 groups. 
-
-    ret = NewRiderReturn(
-        user = RiderModel.from_orm(user),
-        token = TokenModel.from_orm(new_token_ORM)
-    )
-    orm_session.close()
-
-    return ret
-
-
-@app.post("/driver/login")
-def login_driver(user_creds: LoginData):
-    """Adds a new row to user table."""
-    orm_session = orm_parent_session()
-    # Generate a salt, then hash the password. 
-    # Don't verify password strength here - do that on frontend. 
-
-    try:
-        user = orm_session.query(DriverORM).filter(DriverORM.email == user_creds.email).one()
+        user = orm_session.query(RiderORM).filter(
+            RiderORM.email == user_creds.email).one()
     except NoResultFound:
         time.sleep(random.randrange(1, 2))
         orm_session.close()
@@ -131,37 +90,80 @@ def login_driver(user_creds: LoginData):
     token = gen_token()
 
     new_token_ORM = TokenORM(
-        val = token,
-        did = user.id #this will be driverID
+        val=token,
+        rid=user.id  # this will be riderID
     )
 
     orm_session.add(new_token_ORM)
     orm_session.commit()
 
-    # DEBUG: Add user to random number between 1 and 10 groups. 
+    # DEBUG: Add user to random number between 1 and 10 groups.
 
-    ret = NewDriverReturn(
-        user = DriverModel.from_orm(user),
-        token = TokenModel.from_orm(new_token_ORM)
+    ret = NewRiderReturn(
+        user=RiderModel.from_orm(user),
+        token=TokenModel.from_orm(new_token_ORM)
     )
     orm_session.close()
 
     return ret
 
 
+@app.post("/driver/login")
+def login_driver(user_creds: LoginData):
+    """Adds a new row to user table."""
+    orm_session = orm_parent_session()
+    # Generate a salt, then hash the password.
+    # Don't verify password strength here - do that on frontend.
+
+    try:
+        user = orm_session.query(DriverORM).filter(
+            DriverORM.email == user_creds.email).one()
+    except NoResultFound:
+        time.sleep(random.randrange(1, 2))
+        orm_session.close()
+        raise HTTPException(400, "Email not found!")
+
+    hashed = bcrypt.hashpw(bytes(user_creds.password, 'utf-8'), user.salt)
+
+    if(hashed != user.hashed):
+        orm_session.close()
+        raise HTTPException(400, "Email not found!")
+
+    token = gen_token()
+
+    new_token_ORM = TokenORM(
+        val=token,
+        did=user.id  # this will be driverID
+    )
+
+    orm_session.add(new_token_ORM)
+    orm_session.commit()
+
+    # DEBUG: Add user to random number between 1 and 10 groups.
+
+    ret = NewDriverReturn(
+        user=DriverModel.from_orm(user),
+        token=TokenModel.from_orm(new_token_ORM)
+    )
+    orm_session.close()
+
+    return ret
 
 
 def getLongLat(list):
     geo = list[0]
     coords = geo['geometry']
     bounds = coords['location']
-    northEastCoords = bounds #ive decided this are the coords we will use lol
-    lat = northEastCoords["lat"] #changed to use location instead of bounds, just don't feel like renaming lol
+    northEastCoords = bounds  # ive decided this are the coords we will use lol
+    # changed to use location instead of bounds, just don't feel like renaming lol
+    lat = northEastCoords["lat"]
     long = northEastCoords["lng"]
 
-    return (long,lat)
+    return (long, lat)
 
-def find_distance(lo1, la1, lo2, la2): #credit : https://www.kite.com/python/answers/how-to-find-the-distance-between-two-lat-long-coordinates-in-python
+
+# credit : https://www.kite.com/python/answers/how-to-find-the-distance-between-two-lat-long-coordinates-in-python
+def find_distance(lo1, la1, lo2, la2):
     R = 6373.0
 
     lat1 = math.radians(la1)
@@ -172,16 +174,16 @@ def find_distance(lo1, la1, lo2, la2): #credit : https://www.kite.com/python/ans
     dlon = lon2 - lon1
     dlat = lat2 - lat1
 
-    a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
+    a = math.sin(dlat / 2)**2 + math.cos(lat1) * \
+        math.cos(lat2) * math.sin(dlon / 2)**2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
-    distance = R * c #in in km :/
+    distance = R * c  # in in km :/
 
     return str(distance)
 
 
-
-def googleMapsTimeDist(lo1,la1,lo2,la2): #cuz i return time then dist
+def googleMapsTimeDist(lo1, la1, lo2, la2):  # cuz i return time then dist
 
     slo1 = str(lo1).replace(" ", "")
     sla1 = str(la1).replace(" ", "")
@@ -192,7 +194,8 @@ def googleMapsTimeDist(lo1,la1,lo2,la2): #cuz i return time then dist
     destination = "destination=" + sla2 + "," + slo2
     thekey = "key=" + key.key
 
-    url = "https://maps.googleapis.com/maps/api/directions/json?" + str(origin) + "&" + str(destination) +"&" + thekey
+    url = "https://maps.googleapis.com/maps/api/directions/json?" + \
+        str(origin) + "&" + str(destination) + "&" + thekey
 
     googleReturn = requests.get(url)
     src = googleReturn.json()["routes"]
@@ -209,10 +212,8 @@ def googleMapsTimeDist(lo1,la1,lo2,la2): #cuz i return time then dist
     return (durTime, durDist)
 
 
-
-
-def set_price(dist): #uber does $0.85 per mile plus $0.30 per minute
-    priceDist = float(dist[1].split()[0])*(.85) 
+def set_price(dist):  # uber does $0.85 per mile plus $0.30 per minute
+    priceDist = float(dist[1].split()[0].replace(",", ""))*(.85)
     if('hours' in dist[0]):
         list = dist[0].split()
         priceTime = float(list[0])*60*.3 + float(list[2])*.3
@@ -229,41 +230,41 @@ def submit_route(src: str, dest: str, token: str, riders: int):
     rid = get_rid_token(token)["rid"]
     if(rid == -1):
         raise HTTPException(422, "User not found!")
-    
 
-    urlSRC = requests.get("https://maps.googleapis.com/maps/api/geocode/json", params={"address": src, "key": key.key})
-    urlDEST = requests.get("https://maps.googleapis.com/maps/api/geocode/json", params={"address": dest, "key": key.key})
+    urlSRC = requests.get("https://maps.googleapis.com/maps/api/geocode/json",
+                          params={"address": src, "key": key.key})
+    urlDEST = requests.get("https://maps.googleapis.com/maps/api/geocode/json",
+                           params={"address": dest, "key": key.key})
 
     srcLat = urlSRC.json()["results"]
-    
+
     srcCoords = getLongLat(srcLat)
     src_lat = srcCoords[1]
     src_long = srcCoords[0]
-    
+
     destLat = urlDEST.json()["results"]
-    
+
     destCoords = getLongLat(destLat)
     dest_lat = destCoords[1]
     dest_long = destCoords[0]
 
     distance = googleMapsTimeDist(src_long, src_lat, dest_long, dest_lat)
 
-    price = (float(distance[0].split()[0]) * 1 + float(distance[1].split()[0]) * 0.30 + 2.00) * math.log(riders + math.e)
-
     new_ride_orm = RideHistoryORM(
-        sourceLat = src_lat,
-        sourceLong = src_long,
-        destLat = dest_lat,
-        destLong = dest_long,
-        price = set_price(distance),
-        riders = riders, # how to set?
-        time = distance[0], #distance[0] is time of trip
-        distance = distance[1],
-        did = 0, #or null?
-        rid = rid,
-        status = 0, #init to 0 
-        dist_src = "far", #how to get src lat and long?
-        time_src = "long" #how to estimate time?
+        timestamp=datetime.datetime.now(),
+        sourceLat=src_lat,
+        sourceLong=src_long,
+        destLat=dest_lat,
+        destLong=dest_long,
+        price=set_price(distance),
+        riders=riders,  # how to set?
+        time=distance[0],  # distance[0] is time of trip
+        distance=distance[1],
+        did=0,  # or null?
+        rid=rid,
+        status=0,  # init to 0
+        dist_src="far",  # how to get src lat and long?
+        time_src="long"  # how to estimate time?
     )
 
     orm_session.add(new_ride_orm)
@@ -271,10 +272,10 @@ def submit_route(src: str, dest: str, token: str, riders: int):
     ret = RideHistoryModel.from_orm(new_ride_orm)
     # ret.key = ret.id
 
-    #check if success?
+    # check if success?
 
     orm_session.close()
-    
+
     return ret
 
 
@@ -292,11 +293,12 @@ def getRouteByID(id: int):
 
 
 @app.post("/rides/id/complete")
-def completeRide(id:int):
+def completeRide(id: int):
     s = orm_parent_session()
 
     for r in s.query(RideHistoryORM).filter(RideHistoryORM.id == id):
-        s.query(RideHistoryORM).filter(RideHistoryORM.id == id).update({RideHistoryORM.status: 3})
+        s.query(RideHistoryORM).filter(RideHistoryORM.id ==
+                                       id).update({RideHistoryORM.status: 3})
         s.commit()
         route = RideHistoryModel.from_orm(r)
         s.close()
@@ -311,22 +313,23 @@ def requestRide(id: int, card_id: int, token: str):
     rid = get_rid_token(token)["rid"]
     if(rid == -1):
         raise HTTPException(422, "User not found!")
-    
+
     s = orm_parent_session()
     try:
         r = s.query(RideHistoryORM).filter(RideHistoryORM.id == id).one()
     except Exception as e:
         raise HTTPException(450, "Error! " + str(e))
-    
+
     if r.rid != rid:
         raise HTTPException(430, "Unauthenticated!")
 
-    r.status = 1 
-    r.card_id = card_id 
+    r.status = 1
+    r.card_id = card_id
     s.commit()
     route = RideHistoryModel.from_orm(r)
     s.close()
     return route
+
 
 @app.get("/driver/routes")
 def getDriverRoutes(token: str, latititude: float, longitude: float):
@@ -340,21 +343,28 @@ def getDriverRoutes(token: str, latititude: float, longitude: float):
 
     routes = []
 
-    for r in s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (seats+1)): #idk if <= is supported lol i couldn't find it in the documentation so 
-        routeFound = RideHistoryModel.from_orm(r)
-        srcLat = routeFound.sourceLat
-        srcLng = routeFound.sourceLong
-        routes.append(routeFound)
-        distTime = googleMapsTimeDist(srcLng,srcLat,longitude,latititude)
+    # idk if <= is supported lol i couldn't find it in the documentation so
+    for r in s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (seats+1)).order_by(desc(RideHistoryORM.timestamp)):
+        srcLat = r.sourceLat
+        srcLng = r.sourceLong
+        distTime = googleMapsTimeDist(srcLng, srcLat, longitude, latititude)
         time = distTime[0]
         dist = distTime[1]
-        s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (seats+1)).update({RideHistoryORM.time_src: time})
-        s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (seats+1)).update({RideHistoryORM.dist_src: dist})
+
+        s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (
+            seats+1)).update({RideHistoryORM.time_src: time})
+        s.query(RideHistoryORM).filter(RideHistoryORM.status == 1, RideHistoryORM.riders < (
+            seats+1)).update({RideHistoryORM.dist_src: dist})
         s.commit()
 
+        routeFound = RideHistoryModel.from_orm(r)
+        routes.append(routeFound)
+
+
     s.close()
- 
+
     return routes
+
 
 @app.post("/driver/claim")
 def driverClaimRoute(token: str, userRouteId: int, newStatus: int):
@@ -364,18 +374,20 @@ def driverClaimRoute(token: str, userRouteId: int, newStatus: int):
 
     s = orm_parent_session()
     try:
-        r = s.query(RideHistoryORM).filter(RideHistoryORM.id == userRouteId).one()
+        r = s.query(RideHistoryORM).filter(
+            RideHistoryORM.id == userRouteId).one()
     except Exception as e:
         raise HTTPException(430, "Error! " + str(e))
-    
+
     r.status = newStatus
     r.did = did
     s.commit()
     ret = RideHistoryModel.from_orm(r)
     return ret
 
+
 @app.get("/rider/history")
-def getRiderInfo(token:str): #was token : str
+def getRiderInfo(token: str):  # was token : str
     s = orm_parent_session()
     rid = get_rid_token(token)["rid"]
     if(rid == -1):
@@ -389,8 +401,9 @@ def getRiderInfo(token:str): #was token : str
 
     return rides
 
+
 @app.get("/driver/history")
-def getDriverInfo(token:str): 
+def getDriverInfo(token: str):
     s = orm_parent_session()
     did = get_did_token(token)["did"]
     if(did == -1):
@@ -404,6 +417,7 @@ def getDriverInfo(token:str):
 
     return rides
 
+
 @app.get("/rider/get")
 def get_rider(token: str):
 
@@ -413,12 +427,15 @@ def get_rider(token: str):
 
     s = orm_parent_session()
     try:
-        rider = RiderModel.from_orm(s.query(RiderORM).filter(RiderORM.id == rid).one())
+        rider = RiderModel.from_orm(
+            s.query(RiderORM).filter(RiderORM.id == rid).one())
         s.close()
         return rider
     except NoResultFound:
         raise HTTPException(422, "No rider found!")
 
+
+@app.get("/driver/get")
 def get_driver(token: str):
 
     did = get_did_token(token)["did"]
@@ -427,11 +444,13 @@ def get_driver(token: str):
 
     s = orm_parent_session()
     try:
-        driver = DriverModel.from_orm(s.query(DriverORM).filter(DriverORM.id == did).one())
+        driver = DriverModel.from_orm(
+            s.query(DriverORM).filter(DriverORM.id == did).one())
         s.close()
         return driver
     except NoResultFound:
         raise HTTPException(422, "No rider found!")
+
 
 def get_rid_token(token: str):
     s = orm_parent_session()
@@ -443,6 +462,7 @@ def get_rid_token(token: str):
         s.close()
         return {"result": 0, "rid": -1}
 
+
 def get_did_token(token: str):
     s = orm_parent_session()
     try:
@@ -452,6 +472,7 @@ def get_did_token(token: str):
     except NoResultFound:
         s.close()
         return {"result": 0, "did": -1}
+
 
 @app.post("/rider/add")
 def add_rider(new_user: RiderModel):
@@ -472,7 +493,7 @@ def add_rider(new_user: RiderModel):
         email=new_user.email,
         pic=new_user.pic,
         phoneNumber=new_user.phoneNumber,
-        ada = new_user.ada
+        ada=new_user.ada
     )
 
     try:
@@ -501,6 +522,7 @@ def add_rider(new_user: RiderModel):
     orm_session.close()
     return ret
 
+
 @app.post("/driver/add")
 def add_driver(new_user: DriverModel):
     """Adds a new row to driver table."""
@@ -520,13 +542,13 @@ def add_driver(new_user: DriverModel):
         email=new_user.email,
         pic=new_user.pic,
         phoneNumber=new_user.phoneNumber,
-        licensePlate = new_user.licensePlate,
-        carMake = new_user.carMake,
-        carColor = new_user.carColor,
-        driverLicence = new_user.driverLicence,
-        numSeats = new_user.numSeats,
-        ada = new_user.ada,
-        active = 0
+        licensePlate=new_user.licensePlate,
+        carMake=new_user.carMake,
+        carColor=new_user.carColor,
+        driverLicence=new_user.driverLicence,
+        numSeats=new_user.numSeats,
+        ada=new_user.ada,
+        active=0
     )
 
     try:
@@ -546,8 +568,6 @@ def add_driver(new_user: DriverModel):
     orm_session.add(new_token_ORM)
     orm_session.commit()
 
-
-
     ret = NewDriverReturn(
         user=DriverModel.from_orm(new_user_ORM),
         token=TokenModel.from_orm(new_token_ORM)
@@ -557,12 +577,13 @@ def add_driver(new_user: DriverModel):
     orm_session.close()
     return ret
 
+
 @app.post("/rider/fav_loc/add")
 def add_fav_loc(token: str, newLoc: str):
     rid = get_rid_token(token)["rid"]
     if(rid == -1):
         raise HTTPException(422, "User not found!")
-    
+
     s = orm_parent_session()
     f = FavSpotsORM(location=newLoc, rid=rid)
     s.add(f)
@@ -570,12 +591,13 @@ def add_fav_loc(token: str, newLoc: str):
     s.close()
     return get_rider(token)
 
+
 @app.post("/rider/cards/add")
 def add_fav_loc(newCard: CardsModel):
     rid = get_rid_token(newCard.token)["rid"]
     if(rid == -1):
         raise HTTPException(422, "User not found!")
-    
+
     s = orm_parent_session()
     c = CardsORM(
         number=newCard.number,
@@ -590,30 +612,36 @@ def add_fav_loc(newCard: CardsModel):
     return get_rider(newCard.token)
 
 
-@app.get("/rider/summary")
-def get_rider_summary(token: str):
+@app.get("/summary")
+def get_summary(token: str, mode: str):
+    if mode == "driver":
+        return get_driver_summary(token)
+    elif mode == "rider":
+        return get_rider_summary(token)
+    else:
+        raise HTTPException(430, "Invalid request!")
 
+
+def get_rider_summary(token: str):
     rid = get_rid_token(token)["rid"]
     if(rid == -1):
         raise HTTPException(422, "User not found!")
 
     s = orm_parent_session()
-    totalMoney = 0
-    numTrips = 0
-    try:
-        for r in s.query(RideHistoryORM).filter(RideHistoryORM.rid == rid):
-            routeFound = RideHistoryModel.from_orm(r)
-            price = routeFound.price
-            totalMoney = totalMoney + price
-            numTrips = numTrips + 1
 
-        return totalMoney, numTrips
+    routePrices = [r.price for r in s.query(RideHistoryORM).filter(
+        RideHistoryORM.rid == rid).filter(RideHistoryORM.status == 4)]
 
-    except NoResultFound:
-        raise HTTPException(422, "No rider found!")
+    print(routePrices)
+    s.close()
+
+    return {
+        "numTrips": len(routePrices),
+        "avgPrice": sum(routePrices)/max(len(routePrices), 1),
+        "totalSpend": sum(routePrices)
+    }
 
 
-@app.get("/driver/summary")
 def get_driver_summary(token: str):
 
     did = get_did_token(token)["did"]
@@ -621,16 +649,12 @@ def get_driver_summary(token: str):
         raise HTTPException(422, "User not found!")
 
     s = orm_parent_session()
-    totalMoney = 0
-    numTrips = 0
-    try:
-        for r in s.query(RideHistoryORM).filter(RideHistoryORM.did == did):
-            routeFound = RideHistoryModel.from_orm(r)
-            price = routeFound.price
-            totalMoney = totalMoney + price
-            numTrips = numTrips + 1
+    routePrices = [r.price for r in s.query(RideHistoryORM).filter(
+        RideHistoryORM.did == did).filter(RideHistoryORM.status == 4)]
+    s.close()
 
-        return totalMoney, numTrips
-
-    except NoResultFound:
-        raise HTTPException(422, "No driver found!")
+    return {
+        "numTrips": len(routePrices),
+        "avgPrice": sum(routePrices)/max(len(routePrices), 1),
+        "totalSpend": sum(routePrices)
+    }
