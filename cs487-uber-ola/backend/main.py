@@ -590,7 +590,7 @@ def add_fav_loc(newCard: CardsModel):
     return get_rider(newCard.token)
 
 
-@app.get("rider/summary")
+@app.get("/rider/summary")
 def get_rider_summary(token: str):
 
     rid = get_rid_token(token)["rid"]
@@ -611,8 +611,8 @@ def get_rider_summary(token: str):
         raise HTTPException(422, "No rider found!")
 
 
-@app.get("driver/summary")
-def get_driver(token: str):
+@app.get("/driver/summary")
+def get_driver_summary(token: str):
 
     did = get_did_token(token)["did"]
     if(did == -1):
