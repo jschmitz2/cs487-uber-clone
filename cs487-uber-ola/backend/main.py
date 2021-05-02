@@ -603,3 +603,45 @@ def add_fav_loc(newCard: CardsModel):
     s.close()
 
     return get_rider(newCard.token)
+
+
+@app.get("rider/summary")
+def get_rider_summary(token: str):
+
+    rid = get_rid_token(token)["rid"]
+    if(rid == -1):
+        raise HTTPException(422, "User not found!")
+
+    s = orm_parent_session()
+    total = 0
+    try:
+        for r in s.query(RideHistoryORM).filter(RideHistoryORM.rid == rid):
+            routeFound = RideHistoryModel.from_orm(r)
+            price = routeFound.price
+            total = total + price
+
+        return total
+
+    except NoResultFound:
+        raise HTTPException(422, "No rider found!")
+
+
+@app.get("driver/summary")
+def get_driver(token: str):
+
+    did = get_did_token(token)["did"]
+    if(did == -1):
+        raise HTTPException(422, "User not found!")
+
+    s = orm_parent_session()
+    total = 0
+    try:
+        for r in s.query(RideHistoryORM).filter(RideHistoryORM.did == did):
+            routeFound = RideHistoryModel.from_orm(r)
+            price = routeFound.price
+            total = total + price
+
+        return total
+
+    except NoResultFound:
+        raise HTTPException(422, "No rider found!")
