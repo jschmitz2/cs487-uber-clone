@@ -598,14 +598,16 @@ def get_rider_summary(token: str):
         raise HTTPException(422, "User not found!")
 
     s = orm_parent_session()
-    total = 0
+    totalMoney = 0
+    numTrips = 0
     try:
         for r in s.query(RideHistoryORM).filter(RideHistoryORM.rid == rid):
             routeFound = RideHistoryModel.from_orm(r)
             price = routeFound.price
-            total = total + price
+            totalMoney = totalMoney + price
+            numTrips = numTrips + 1
 
-        return total
+        return totalMoney, numTrips
 
     except NoResultFound:
         raise HTTPException(422, "No rider found!")
@@ -619,14 +621,16 @@ def get_driver_summary(token: str):
         raise HTTPException(422, "User not found!")
 
     s = orm_parent_session()
-    total = 0
+    totalMoney = 0
+    numTrips = 0
     try:
         for r in s.query(RideHistoryORM).filter(RideHistoryORM.did == did):
             routeFound = RideHistoryModel.from_orm(r)
             price = routeFound.price
-            total = total + price
+            totalMoney = totalMoney + price
+            numTrips = numTrips + 1
 
-        return total
+        return totalMoney, numTrips
 
     except NoResultFound:
         raise HTTPException(422, "No driver found!")
