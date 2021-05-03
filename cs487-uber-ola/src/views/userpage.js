@@ -51,14 +51,22 @@ class UserPage extends React.Component {
     }
     return (
       <div>
+        <div>
+          <h3>Your Stats</h3>
         <p>
           Your name: {user.fname} {user.lname}.
         </p>
         <p>Your email: {user.email}</p>
         <p>Your phone number: {user.email}</p>
         <p>Total rides taken: {tripData.numTrips}.</p>
-        <p>Total spent: ${tripData.totalSpend}.</p>
+        <p>Total spent: ${tripData.totalSpend.toFixed(2)}.</p>
         <p>Average price: ${tripData.avgPrice.toFixed(2)}.</p>
+        </div>
+
+        <div>
+          <h3>Purchase History By Card</h3>
+          {tripData.trips.map((x) => <p>{(new Date(x.timestamp)).toLocaleString()} - {x.distance} for {x.price.toFixed(2)} on card {x.card.number.substring(x.card.number.length - 4)}</p>)}
+        </div>
       </div>
     );
   }
@@ -70,6 +78,7 @@ class UserPage extends React.Component {
 
     return (
       <div>
+        <div>
         <p>
           Your name: {user.fname} {user.lname}.
         </p>
@@ -78,8 +87,14 @@ class UserPage extends React.Component {
         <p>Your car: {user.carColor} {user.carMake}, with plate {user.licensePlate}.</p>
         <p>Total rides : {tripData.numTrips}.</p>
         <p>Total rides driven: {tripData.numTrips}.</p>
-        <p>Total earnings: ${tripData.totalSpend}.</p>
+        <p>Total earnings: ${tripData.totalSpend.toFixed(2)}.</p>
         <p>Average income per ride: ${tripData.avgPrice.toFixed(2)}.</p>
+        </div>
+
+        <div>
+          <h3>Rider History</h3>
+          {tripData.trips.map((x) => <p>{(new Date(x.timestamp)).toLocaleString()} - {x.distance} for {x.price.toFixed(2)} for user {x.rider.fname}</p>)}
+        </div>
       </div>
     );
   }

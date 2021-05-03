@@ -48,7 +48,7 @@ class RideRequest extends React.Component {
     return (
       <ReqContainer style={{border: ((this.borderFunc()) ? "solid 1px black" : "")}}>
         <HeaderFlex>
-        <RideRequestHeading>Ride Request</RideRequestHeading>
+        <RideRequestHeading>Ride Request - {this.req.rider.fname}</RideRequestHeading>
         <RideRequestHeading>{this.req.riders} rider{(this.req.riders != 1) ? "s" : ""}</RideRequestHeading>
         </HeaderFlex>
         <RowFlex>

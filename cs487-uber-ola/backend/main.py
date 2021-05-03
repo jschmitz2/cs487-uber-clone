@@ -632,13 +632,17 @@ def get_rider_summary(token: str):
     routePrices = [r.price for r in s.query(RideHistoryORM).filter(
         RideHistoryORM.rid == rid).filter(RideHistoryORM.status == 4)]
 
-    print(routePrices)
+    trips = [RideHistoryModel.from_orm(r) for r in s.query(RideHistoryORM).filter(
+        RideHistoryORM.rid == rid).filter(RideHistoryORM.status == 4)]
+    trips.reverse()
+
     s.close()
 
     return {
         "numTrips": len(routePrices),
         "avgPrice": sum(routePrices)/max(len(routePrices), 1),
-        "totalSpend": sum(routePrices)
+        "totalSpend": sum(routePrices),
+        "trips": trips
     }
 
 
@@ -653,8 +657,12 @@ def get_driver_summary(token: str):
         RideHistoryORM.did == did).filter(RideHistoryORM.status == 4)]
     s.close()
 
+    trips = [RideHistoryModel.from_orm(r) for r in s.query(RideHistoryORM).filter(
+        RideHistoryORM.did == did).filter(RideHistoryORM.status == 4)]
+
     return {
         "numTrips": len(routePrices),
         "avgPrice": sum(routePrices)/max(len(routePrices), 1),
-        "totalSpend": sum(routePrices)
+        "totalSpend": sum(routePrices),
+        "trips": trips
     }

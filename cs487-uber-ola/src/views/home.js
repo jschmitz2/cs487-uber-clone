@@ -226,6 +226,9 @@ class Home extends React.Component {
                     }
                   >
                     <option>Please Select...</option>
+                    <option>Sox Field Parking</option>
+                    <option>Parking Chicago</option>
+                    <option>Parking Brookfield</option>
                     {this.state.user.favSpots.map((x) => (
                       <option value={x.location}>{x.location}</option>
                     ))}
@@ -273,6 +276,9 @@ class Home extends React.Component {
                     }
                   >
                     <option>Please Select...</option>
+                    <option>Sox Field Parking</option>
+                    <option>Parking Chicago</option>
+                    <option>Parking Brookfield</option>
 
                     {this.state.user.favSpots.map((x) => (
                       <option value={x.location}>{x.location}</option>
