@@ -148,6 +148,7 @@ class RideHistoryORM(Base):
     dist_src = Column(String(32), nullable=False)
     time_src = Column(String(32), nullable=False)
     driver = relationship("DriverORM")
+    card = relationship("CardsORM")
 
 class RideHistoryModel(BaseModel):
         
@@ -169,6 +170,7 @@ class RideHistoryModel(BaseModel):
     token: Optional[str]
     card_id: Optional[int]
     driver: Optional[DriverModel]
+    card: Optional[CardsModel]
     
     class Config:
         orm_mode = True

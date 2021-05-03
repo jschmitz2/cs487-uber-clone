@@ -79,8 +79,14 @@ class UserRoute extends React.Component {
           src={
             "https://www.google.com/maps/embed/v1/directions?key=" +
             keys.gmaps +
-            "&origin=" + this.state.route.sourceLat + "," + this.state.route.sourceLong + 
-            "&destination=" + this.state.route.destLat + "," + this.state.route.destLong
+            "&origin=" +
+            this.state.route.sourceLat +
+            "," +
+            this.state.route.sourceLong +
+            "&destination=" +
+            this.state.route.destLat +
+            "," +
+            this.state.route.destLong
           }
           width="500px"
           height="700px"
@@ -125,18 +131,25 @@ class UserRoute extends React.Component {
   }
 
   renderDriverInfo(driver) {
-     if(driver == null) {
-       return <div>
-         <br/>
-         <p>No driver assigned yet! This page will update automatically.</p>
-       </div>
-     } else {
-       return <div>
-         <br/>
-         <h3>Driver assigned: {driver.fname}</h3>
-         <p>Look for a {driver.carColor} {driver.carMake}, with plate {driver.licensePlate}.</p>
-       </div>
-     }
+    if (driver == null) {
+      return (
+        <div>
+          <br />
+          <p>No driver assigned yet! This page will update automatically.</p>
+        </div>
+      );
+    } else {
+      return (
+        <div>
+          <br />
+          <h3>Driver assigned: {driver.fname}</h3>
+          <p>
+            Look for a {driver.carColor} {driver.carMake}, with plate{" "}
+            {driver.licensePlate}.
+          </p>
+        </div>
+      );
+    }
   }
 
   render() {
@@ -146,7 +159,18 @@ class UserRoute extends React.Component {
       return null;
     }
 
-    let rideCompletedMessage = (this.state.route.status == 4) ? <div><br/><h3>Ride completed!</h3> <p>Your account has been charged for ${this.state.route.price.toFixed(2)}. </p><p>Thanks for choosing TotallyNotUber!</p></div>  : null
+    let rideCompletedMessage =
+      this.state.route.status == 4 ? (
+        <div>
+          <br />
+          <h3>Ride completed!</h3>{" "}
+          <p>
+            Your card ending in {this.state.route.card.number.substring(this.state.route.card.number.length - 4)} has been charged for $
+            {this.state.route.price.toFixed(2)}.{" "}
+          </p>
+          <p>Thanks for choosing TotallyNotUber!</p>
+        </div>
+      ) : null;
     return (
       <PageDiv>
         <h1>Route Page</h1>
