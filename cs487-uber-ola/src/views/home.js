@@ -5,6 +5,7 @@ import Button from "react-bootstrap/Button";
 import keys from "../keys";
 import Col from "react-bootstrap/Col";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
+import Cookies from "js-cookie";
 
 const HeadingStyled = styled.h1``;
 
@@ -50,58 +51,48 @@ class Home extends React.Component {
       userRouteId: null,
       userRoutePrice: null,
       userRouteDist: null,
-      newCard: false,
+      card: -1,
+      ride: null,
       enterSrc: "enter",
       enterDest: "enter",
-      user: {
-        cards: [
-          {
-            id: 3513358,
-            number: "2513 8257 3512 5238",
-            holder: "Discover",
-            exp: "05/31",
-          },
-        ],
-        fav_loc: [
-          {
-            id: 0,
-            loc: "1012 W 31st Pl., Chicago, IL",
-          },
-          {
-            id: 1,
-            loc: "1212 S. Michigan, Chicago, IL",
-          },
-        ],
-      },
+      user: null,
+      numRiders: 1
+
     };
     this.map = null;
+    this.token = Cookies.get("token");
     this.renderMap = this.renderMap.bind(this);
     this.getRouteInfo = this.getRouteInfo.bind(this);
+    this.addNewCard = this.addNewCard.bind(this);
+    this.claimRoute = this.claimRoute.bind(this);
+  }
+
+  componentDidMount() {
+    fetch("http://" + window.location.hostname + ":8000/rider/get?token=" + this.token)
+    .then((res) => res.json())
+    .then((json) => {
+      this.setState({ user: json });
+      if(json.cards.length > 0) {
+        this.setState({ card: json.cards[0].id });
+      }
+    })
   }
 
   getRouteInfo() {
-    /* API ENDPOINT
-     *
-     * Arguments:
-     * src: String representing start point.
-     * dest: String representing end point.
-     * token: String. The user's token.
-     * numRiders: Int. The number of riders.
-     *
-     * Expected behavior:
-     * Create a new route ID with the provided information, tied to the user.
-     * Return a built "route" object.
-     */
-    // fetch() and get data
-    // .then((res) => res.json)
-    // .then((json) => {
-    this.setState({
-      userRouted: true,
-      userRouteId: Math.floor(Math.random() * 100),
-      userRoutePrice: Math.random() * 40,
-      userRouteDist: Math.random() * 20,
-    });
-    console.log(this.state);
+    fetch("http://" + window.location.hostname + ":8000/rides/add?token=" + this.token + "&src=" + this.state.src + "&dest=" + this.state.dest + "&riders=" + this.state.numRiders, {
+      "method": "POST"
+    })
+    .then((res) => res.json())
+    .then((json) => this.setState({ ride: json, routed: 1}));
+  }
+
+  claimRoute() {
+    fetch("http://" + window.location.hostname + ":8000/rides/confirm?token=" + this.token + "&id=" + this.state.ride.id + "&card_id=" + this.state.card + "&newStatus=1", {
+      "method": "POST"
+    })
+    .then((res) => res.json())
+    .then((json) => this.setState({ ride: json, routed: 1}));
+
   }
 
   renderMap() {
@@ -118,9 +109,10 @@ class Home extends React.Component {
           height="700px"
         />
       );
+      this.setState({ routed: 0 });
     }
 
-    if (this.state.src != "" && this.state.dst != "") {
+    if(this.state.ride != null) {
       if (this.state.routed == 1) {
         this.setState({ routed: 2 });
         this.map = (
@@ -128,10 +120,8 @@ class Home extends React.Component {
             src={
               "https://www.google.com/maps/embed/v1/directions?key=" +
               keys.gmaps +
-              "&origin=" +
-              this.state.src +
-              "&destination=" +
-              this.state.dest
+              "&origin=" + this.state.ride.sourceLat + "," + this.state.ride.sourceLong + 
+              "&destination=" + this.state.ride.destLat + "," + this.state.ride.destLong
             }
             width="500px"
             height="700px"
@@ -142,19 +132,54 @@ class Home extends React.Component {
   }
 
   getUserRouteInfo() {
-    if (this.state.userRouted) {
+    if (this.state.ride != null) {
+      console.log(this.state.ride);
       return (
         <RouteInfoDiv>
           <h3>Route Info</h3>
-          <p>Price: ${this.state.userRoutePrice.toFixed(2)}</p>
-          <p>Distance: {this.state.userRouteDist.toFixed(2)}</p>
+          <p>Price: ${this.state.ride.price.toFixed(2)}</p>
+          <p>Distance: {this.state.ride.distance}</p>
+          <p>Time: {this.state.ride.time}</p>
         </RouteInfoDiv>
       );
     }
   }
 
+  addToFavorites(newLoc) {
+    fetch("http://" + window.location.hostname + ":8000/rider/fav_loc/add?token=" + this.token + "&newLoc=" + newLoc,
+    {
+      "method": "POST"
+    })
+    .then((res) => res.json())
+    .then((json) => {
+      this.setState({ user: json });
+      alert("Location added to favorites!");
+    });
+  }
+
+  addNewCard() {
+    fetch("http://" + window.location.hostname + ":8000/rider/cards/add",
+    {
+      "method": "POST",
+      "body": JSON.stringify({
+        number: this.state.newCardNumber,
+        expiration: this.state.newCardExp,
+        cvc: this.state.newCardCVC,
+        token: this.token
+      })
+    })
+    .then((res) => res.json())
+    .then((json) => {
+      this.setState({ user: json, card: json.cards[json.cards.length - 1].id});
+      alert("New card added!");
+    });
+  }
+
   render() {
     this.renderMap();
+    if(this.state.user == null) {
+      return null;
+    }
     return (
       <PageDiv>
         <ContentDiv>
@@ -189,7 +214,7 @@ class Home extends React.Component {
                     }
                   />
                   <ButtonDiv>
-                    <Button>Add to favorites</Button>
+                    <Button onClick={() => this.addToFavorites(this.state.src)}>Add to favorites</Button>
                   </ButtonDiv>
                 </Form.Group>
                 <Form.Group hidden={this.state.enterSrc != "select"}>
@@ -201,8 +226,11 @@ class Home extends React.Component {
                     }
                   >
                     <option>Please Select...</option>
-                    {this.state.user.fav_loc.map((x) => (
-                      <option value={x.loc}>{x.loc}</option>
+                    <option>Sox Field Parking</option>
+                    <option>Parking Chicago</option>
+                    <option>Parking Brookfield</option>
+                    {this.state.user.favSpots.map((x) => (
+                      <option value={x.location}>{x.location}</option>
                     ))}
                   </Form.Control>
                 </Form.Group>
@@ -236,7 +264,7 @@ class Home extends React.Component {
                     }
                   />
                   <ButtonDiv>
-                    <Button>Add to favorites</Button>
+                    <Button onClick={() => this.addToFavorites(this.state.dest)}>Add to favorites</Button>
                   </ButtonDiv>
                 </Form.Group>
                 <Form.Group hidden={this.state.enterDest != "select"}>
@@ -248,9 +276,12 @@ class Home extends React.Component {
                     }
                   >
                     <option>Please Select...</option>
+                    <option>Sox Field Parking</option>
+                    <option>Parking Chicago</option>
+                    <option>Parking Brookfield</option>
 
-                    {this.state.user.fav_loc.map((x) => (
-                      <option value={x.loc}>{x.loc}</option>
+                    {this.state.user.favSpots.map((x) => (
+                      <option value={x.location}>{x.location}</option>
                     ))}
                   </Form.Control>
                 </Form.Group>
@@ -278,24 +309,24 @@ class Home extends React.Component {
                 <Form.Control
                   as="select"
                   onChange={(event) =>
-                    this.setState({ newCard: event.target.value })
+                    this.setState({ card: event.target.value })
                   }
                 >
                   {this.state.user.cards.map((x) => (
                     <option value={x.id}>
-                      {x.holder} ending in {x.number.substr(-4)}
+                      Card ending in {x.number.substr(-4)}
                     </option>
                   ))}
-                  <option value="new">Add New</option>
+                  <option value={-1}>Add New</option>
                 </Form.Control>
               </Form.Group>
               <Form.Group
-                hidden={this.state.newCard != "new"}
+                hidden={this.state.card != -1}
                 as="row"
                 controlId="formNewCard"
               >
                 <Form.Label>New Card Number</Form.Label>
-                <Form.Control as="input" placeholder="1123 4567 8910 1112" />
+                <Form.Control as="input" onChange={(e) => this.setState({ newCardNumber: e.target.value})} placeholder="1123 4567 8910 1112" />
                 <Form.Row>
                   <Col>
                     <Form.Label>Expiration Date</Form.Label>
@@ -303,15 +334,16 @@ class Home extends React.Component {
                       as="input"
                       maxLength={5}
                       placeholder="05/21"
+                      onChange={(e) => this.setState({ newCardExp: e.target.value})}
                     />
                   </Col>
                   <Col>
                     <Form.Label>Security Code</Form.Label>
-                    <Form.Control as="input" maxLength={3} placeholder="543" />
+                    <Form.Control as="input" maxLength={3} placeholder="543" onChange={(e) => this.setState({ newCardCVC: e.target.value })}/>
                   </Col>
                 </Form.Row>
                 <ButtonDiv>
-                  <Button variant="primary">Add Card</Button>
+                  <Button onClick={this.addNewCard} variant="primary">Add Card</Button>
                 </ButtonDiv>
               </Form.Group>
 
@@ -321,7 +353,6 @@ class Home extends React.Component {
                   type="submit"
                   onClick={(event) => {
                     event.preventDefault();
-                    this.setState({ routed: 1 });
                     this.getRouteInfo();
                   }}
                 >
@@ -330,11 +361,12 @@ class Home extends React.Component {
                 <Button
                   variant="primary"
                   type="submit"
-                  disabled={!this.state.userRouted}
+                  disabled={this.state.ride == null || this.state.card == -1}
                   onClick={(event) => {
                     event.preventDefault();
+                    this.claimRoute();
                     document.location.replace(
-                      "/user/route?userRouteId=" + this.state.userRouteId
+                      "/user/route?userRouteId=" + this.state.ride.id
                     );
                   }}
                 >

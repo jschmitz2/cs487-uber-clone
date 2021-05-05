@@ -24,3 +24,6 @@ yarn-error.log*
 
 # keys
 /src/keys*
+/backend/key.py
+
+/backend/test_db.db

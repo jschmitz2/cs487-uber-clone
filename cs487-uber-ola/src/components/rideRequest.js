@@ -45,37 +45,35 @@ class RideRequest extends React.Component {
   }
 
   render() {
-    console.log(this);
-    console.log(this.borderFunc());
     return (
       <ReqContainer style={{border: ((this.borderFunc()) ? "solid 1px black" : "")}}>
         <HeaderFlex>
-        <RideRequestHeading>Ride Request</RideRequestHeading>
+        <RideRequestHeading>Ride Request - {this.req.rider.fname}</RideRequestHeading>
         <RideRequestHeading>{this.req.riders} rider{(this.req.riders != 1) ? "s" : ""}</RideRequestHeading>
         </HeaderFlex>
         <RowFlex>
           <p>Pay: </p>
-          <p>${this.req.price.toFixed(2)}</p>
+          <p>${this.req.price}</p>
         </RowFlex>
         <RowFlex>
           <p>Distance: </p>
-          <p>{this.req.dist_trip.toFixed(2)} miles</p>
+          <p>{this.req.distance}</p>
+        </RowFlex>
+        <RowFlex>
+          <p>Date and time requested: </p>
+          <p style={{whiteSpace: "nowrap"}}>{(new Date(this.req.timestamp)).toLocaleString()}</p>
         </RowFlex>
         <RowFlex>
           <p>Time: </p>
-          <p>{this.req.time_trip.toFixed(2)} miles</p>
+          <p>{this.req.time}</p>
         </RowFlex>
         <RowFlex>
           <p>Distance to Start: </p>
-          <p>{this.req.dist_src.toFixed(2)} miles</p>
+          <p>{this.req.dist_src}</p>
         </RowFlex>
         <RowFlex>
           <p>Time to Start: </p>
-          <p>{this.req.time_src.toFixed(2)} mins</p>
-        </RowFlex>
-        <RowFlex>
-          <p>Hourly Pay: </p>
-          <p>{(this.req.price.toFixed(2) / (this.req.time_src + this.req.time_trip)).toFixed(2)}$/hr</p>
+          <p>{this.req.time_src}</p>
         </RowFlex>
         <RowFlex>
           <RequestButton onClick={this.claimFunc}>Drive</RequestButton>

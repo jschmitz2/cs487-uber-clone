@@ -6,7 +6,8 @@ import keys from "../keys";
 import Login from "../components/login";
 import RideRequest from "../components/rideRequest";
 import Modal from "react-bootstrap/Modal";
-import ButtonGroup from 'react-bootstrap/ButtonGroup'
+import ButtonGroup from "react-bootstrap/ButtonGroup";
+import Cookies from "js-cookie";
 
 const HeadingStyled = styled.h1``;
 
@@ -46,9 +47,10 @@ class DriverNavInfo extends React.Component {
     }
     return (
       <div>
-        <p>Route source: {this.route.src}</p>
-        <p>Route destination: {this.route.dest}</p>
         <p>Route price: {this.route.price.toFixed(2)}</p>
+        <p>Route time: {this.route.time}</p>
+        <p>Time to source: {this.route.time_src}</p>
+        <p>Distance to source: {this.route.dist_src}</p>
       </div>
     );
   }
@@ -66,36 +68,40 @@ class Driver extends React.Component {
         src: "10 W. 31st St., Chicago, IL",
         dest: "Sears Tower",
       },
-      sort: "price"
+      sort: "price",
     };
     this.map = null;
     this.claimFunc = this.claimFunc.bind(this);
+    this.token = Cookies.get("token");
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (loc) => this.setState({ location: loc }),
-        () => alert("Can't access location!")
+        () => console.error("Error: Can't access user location!")
       );
     }
+    this.updateRides = this.updateRides.bind(this);
+    this.updateFunc = window.setInterval(this.updateRides, 1000);
+    this.updateRides();
   }
 
-  componentDidMount() {
-    // fetch() to get all routes
-    let rides_gen = [];
-    for (let i = 0; i < 10; i++) {
-      rides_gen.push({
-        id: i,
-        dist_trip: Math.random() * 5,
-        dist_src: Math.random() * 3,
-        price: Math.random() * 20,
-        time_src: Math.random() * 10,
-        time_trip: Math.random() * 20,
-        src: "10 W. 31st St., Chicago, IL",
-        dest: "Sears Tower",
-        riders: Math.floor(Math.random() * 5 + 1)
-      });
+  updateRides() {
+    if (this.state.location == null) {
+      return;
     }
-    this.setState({ rides: rides_gen });
+    console.log(this.state.location.coords);
+    fetch(
+      "http://" +
+        window.location.hostname +
+        ":8000/driver/routes?token=" +
+        this.token +
+        "&latititude=" +
+        this.state.location.coords.latitude +
+        "&longitude=" +
+        this.state.location.coords.longitude
+    )
+      .then((res) => res.json())
+      .then((json) => this.setState({ rides: json }));
   }
 
   renderMap() {
@@ -113,9 +119,13 @@ class Driver extends React.Component {
               "https://www.google.com/maps/embed/v1/directions?key=" +
               keys.gmaps +
               "&origin=" +
-              this.state.route.src +
+              this.state.route.sourceLat +
+              "," +
+              this.state.route.sourceLong +
               "&destination=" +
-              this.state.route.dest
+              this.state.route.destLat +
+              "," +
+              this.state.route.destLong
             }
             width="500px"
             height="700px"
@@ -141,71 +151,123 @@ class Driver extends React.Component {
     }
   }
 
-  claimFunc(route) {
+  claimFunc(route, newStatus) {
     this.setState({ showRouteModal: true, claimedRoute: route });
-    // fetch() to tell backend that the route was claimed
+    fetch(
+      "http://" +
+        window.location.hostname +
+        ":8000/driver/claim?token=" +
+        this.token +
+        "&userRouteId=" +
+        route.id +
+        "&newStatus=" +
+        newStatus,
+      {
+        method: "POST",
+      }
+    )
+      .then((res) => res.json())
+      .then((json) => this.setState({ route: json }));
+    if (newStatus == 4) {
+      this.setState({ showRouteModal: false });
+    }
   }
 
-  calc_hourly(ride) { 
+  calc_hourly(ride) {
     return ride.price.toFixed(2) / (ride.time_src + ride.time_trip);
   }
 
   sortRides(rides, sortBy) {
-    if(sortBy == "price") {
-      return rides.sort((a, b) => b.price - a.price); 
+    console.log(rides);
+    if (sortBy == "price") {
+      return rides.sort((a, b) => b.price - a.price);
     } else if (sortBy == "time_src") {
       return rides.sort((a, b) => a.time_src - b.time_src);
     } else if (sortBy == "hourly") {
-      return rides.sort((a, b) => this.calc_hourly(b) - this.calc_hourly(a))
+      return rides.sort((a, b) => this.calc_hourly(b) - this.calc_hourly(a));
     }
   }
 
   render() {
     this.renderMap();
-    if(this.state.rides == null) {
+    if (this.state.rides == null) {
       return null;
     }
-    let ridesSorted = this.sortRides(this.state.rides, this.state.sort);
-    let rideRequests = ridesSorted.map((x) => (
+    let rideRequests = this.state.rides.map((x) => (
       <RideRequest
         key={x.id}
-        claimFunc={() => this.claimFunc(x)}
+        claimFunc={() => this.claimFunc(x, 2)}
         previewFunc={() =>
           this.setState({ route: x, routed: 0, map_type: "route" })
         }
         req={x}
-        borderFunc={() => (this.state.route == x)}
+        borderFunc={() => this.state.route == x}
       />
     ));
 
-    let hideModal = () => this.setState({ showRouteModal: false });
+    let hideModal = () => {
+      if (this.state.route.status == 4) {
+        this.setState({ showRouteModal: false });
+      }
+    };
     let openRouteGoogleMaps = () =>
       window.open(
-        "https://www.google.com/maps/dir/?api=1&origin=" +
-          this.state.claimedRoute.src +
+        "https://www.google.com/maps/dir/?api=1&" +
+          "&origin=" +
+          this.state.claimedRoute.sourceLat +
+          "," +
+          this.state.claimedRoute.sourceLong +
           "&destination=" +
-          this.state.claimedRoute.dest
+          this.state.claimedRoute.destLat +
+          "," +
+          this.state.claimedRoute.destLong
       );
 
-    let claimedRideModal = (
-      <Modal show={this.state.showRouteModal} onHide={hideModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>Route information</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <DriverNavInfo route={this.state.claimedRoute} />
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={openRouteGoogleMaps}>
-            Open route in Google Maps
-          </Button>
-          <Button variant="primary" onClick={hideModal}>
-            Route Completed
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    );
+    let openRouteGoogleMapsSource = () =>
+      window.open(
+        "https://www.google.com/maps/dir/?api=1&" +
+          "&origin=" +
+          this.state.location.coords.latitude +
+          "," +
+          this.state.location.coords.longitude +
+          "&destination=" +
+          this.state.claimedRoute.sourceLat +
+          "," +
+          this.state.claimedRoute.sourceLong
+      );
 
+    let claimedRideModal =
+      this.state.route == null ? null : (
+        <Modal show={this.state.showRouteModal} onHide={hideModal}>
+          <Modal.Header closeButton>
+            <Modal.Title>Route Taken!</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <DriverNavInfo route={this.state.claimedRoute} />
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={openRouteGoogleMapsSource}>
+              Open route to source
+            </Button>
+            <Button variant="secondary" onClick={openRouteGoogleMaps}>
+              Open route from source to destination
+            </Button>
+            <Button
+              onClick={() =>
+                this.claimFunc(this.state.route, this.state.route.status + 1)
+              }
+              variant="primary"
+            >
+              {this.state.route.status == 2
+                ? "Arrived at start location"
+                : "Completed route"}
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      );
+
+    let rides =
+      this.state.rides.length == 0 ? <p>No rides available! </p> : rideRequests;
     return (
       <PageDiv>
         {claimedRideModal}
@@ -213,12 +275,12 @@ class Driver extends React.Component {
         <ContentDiv>
           <Pane>
             <h2>Available Rides</h2>
-            <ButtonGroup aria-label="Basic example">
+            {/* <ButtonGroup aria-label="Basic example">
               <Button variant={(this.state.sort == "price") ? "primary" : "secondary"} onClick={() => this.setState({ sort: "price"})}>Price</Button>
               <Button variant={(this.state.sort == "time_src") ? "primary" : "secondary"} onClick={() => this.setState({ sort: "time_src"})}>Time to Source</Button>
               <Button variant={(this.state.sort == "hourly") ? "primary" : "secondary"} onClick={() => this.setState({ sort: "hourly"})}>Hourly Pay</Button>
-            </ButtonGroup>
-            <div>{rideRequests}</div>
+            </ButtonGroup> */}
+            <div>{rides}</div>
           </Pane>
           <Pane>
             <h2>

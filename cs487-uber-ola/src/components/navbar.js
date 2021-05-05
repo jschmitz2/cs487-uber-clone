@@ -84,7 +84,7 @@ const getNavbarItem = (obj) => (
 
 let names, links;
 
-if(userType == "Driver") {
+if(userType == "driver") {
   names = ["Drive"]
   links = ["/drive"]
 } else {

@@ -35,8 +35,8 @@ route = {
 
 // Required methods
 
-function submitRoute(newRoute) {
-    /* 
+function submitRoute(newRoute) { //THIS DONE
+    /*  
      * Add a new route to the database, with stage 0. 
      * Arguments: 
      * src: String representing start point. 
@@ -52,7 +52,8 @@ function submitRoute(newRoute) {
     return newRoute; 
 }
 
-function getRouteById(userRouteId) {
+function getRouteById(userRouteId) { //THIS DONE - maybe update route status from 0 to 1 here?
+
     /* Given an ID, find a route. 
      * Build the completed and updated route object, and return. 
      * This will be polled as a lifecycle method to update a progress bar, 
@@ -61,7 +62,8 @@ function getRouteById(userRouteId) {
    return userRouteId;
 }
 
-function getDriverRoutes(token, latitude, longitude, seats) {
+function getDriverRoutes(token, latitude, longitude, seats) { //NEED TO DO 
+
     /* Get all routes that a driver with a given token can claim. 
      * 
      * Identify the driver based on their token. 
@@ -73,7 +75,8 @@ function getDriverRoutes(token, latitude, longitude, seats) {
     return
 }
 
-function driverClaimRoute(token, userRouteId) { 
+function driverClaimRoute(token, userRouteId) { //THIS DONE, BUT DIDN'T USE TOKEN 
+
     /* Given a provided token and userRouteId, claim the route for the driver. 
      * 
      * Set the status to 2, and mark the driver ID as being taken for it. 
@@ -81,19 +84,27 @@ function driverClaimRoute(token, userRouteId) {
     return
 }
 
-function getRiderInfo(token) {
+function getRiderInfo(token) { // WORKS, BUT ONLY BY ID RN
     /* Return all rides a user's taken. 
      * Statistics can be calculated on the frontend. 
      */ 
     return 
 }
 
-function getDriverInfo(token) {
+function getDriverInfo(token) { //WORKS BUT ONLY BY ID RN
     /* Return all rides a driver's driven. 
      * Statistics can be calculated on the frontend. 
      */ 
     return
 }
+
+function completeRide(id){ //done
+    //update status to 3
+    return
+}
+
+
+
 
 // Copy the user login and registration methods, along with all the token models. 
 // There might be a way to use request cookies to pull token automatically instead of stuffing it into 
